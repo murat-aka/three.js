@@ -32,9 +32,9 @@
 	<body>
 
 		<div id="container"></div>
-		<div id="info"><a href="http://threejs.org" target="_blank">three.js</a> webgl - vertex colors</div>
+		<div id="info"><a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> webgl - vertex colors</div>
 
-		<script src="../build/three.min.js"></script>
+		<script src="../build/three.js"></script>
 
 		<script src="js/Detector.js"></script>
 		<script src="js/libs/stats.min.js"></script>
@@ -65,6 +65,7 @@
 				camera.position.z = 1800;
 
 				scene = new THREE.Scene();
+				scene.background = new THREE.Color( 0xffffff );
 
 				light = new THREE.DirectionalLight( 0xffffff );
 				light.position.set( 0, 0, 1 );
@@ -88,7 +89,7 @@
 				shadowTexture.needsUpdate = true;
 
 				var shadowMaterial = new THREE.MeshBasicMaterial( { map: shadowTexture } );
-				var shadowGeo = new THREE.PlaneGeometry( 300, 300, 1, 1 );
+				var shadowGeo = new THREE.PlaneBufferGeometry( 300, 300, 1, 1 );
 
 				mesh = new THREE.Mesh( shadowGeo, shadowMaterial );
 				mesh.position.y = - 250;
@@ -107,9 +108,9 @@
 				mesh.rotation.x = - Math.PI / 2;
 				scene.add( mesh );
 
-				var faceIndices = [ 'a', 'b', 'c', 'd' ];
+				var faceIndices = [ 'a', 'b', 'c' ];
 
-				var color, f, f2, f3, p, n, vertexIndex,
+				var color, f, f2, f3, p, vertexIndex,
 
 					radius = 200,
 
@@ -123,9 +124,7 @@
 					f2 = geometry2.faces[ i ];
 					f3 = geometry3.faces[ i ];
 
-					n = ( f instanceof THREE.Face3 ) ? 3 : 4;
-
-					for( var j = 0; j < n; j++ ) {
+					for( var j = 0; j < 3; j++ ) {
 
 						vertexIndex = f[ faceIndices[ j ] ];
 
@@ -153,8 +152,8 @@
 
 				var materials = [
 
-					new THREE.MeshLambertMaterial( { color: 0xffffff, shading: THREE.FlatShading, vertexColors: THREE.VertexColors } ),
-					new THREE.MeshBasicMaterial( { color: 0x000000, shading: THREE.FlatShading, wireframe: true, transparent: true } )
+					new THREE.MeshPhongMaterial( { color: 0xffffff, flatShading: true, vertexColors: THREE.VertexColors, shininess: 0 } ),
+					new THREE.MeshBasicMaterial( { color: 0x000000, wireframe: true, transparent: true } )
 
 				];
 
@@ -174,15 +173,12 @@
 				scene.add( group3 );
 
 				renderer = new THREE.WebGLRenderer( { antialias: true } );
-				renderer.setClearColor( 0xffffff );
+				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
-
 				container.appendChild( renderer.domElement );
 
 				stats = new Stats();
-				stats.domElement.style.position = 'absolute';
-				stats.domElement.style.top = '0px';
-				container.appendChild( stats.domElement );
+				container.appendChild( stats.dom );
 
 				document.addEventListener( 'mousemove', onDocumentMouseMove, false );
 

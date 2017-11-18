@@ -1,135 +1,160 @@
+import { Matrix4 } from '../math/Matrix4.js';
+
 /**
  * @author mikael emtinger / http://gomo.se/
  * @author alteredq / http://alteredqualia.com/
  * @author michael guerrero / http://realitymeltdown.com
+ * @author ikerr / http://verold.com
  */
 
-THREE.Skeleton = function ( boneList, useVertexTexture ) {
+function Skeleton( bones, boneInverses ) {
 
-	this.useVertexTexture = useVertexTexture !== undefined ? useVertexTexture : true;
+	// copy the bone array
 
-	// init bones
+	bones = bones || [];
 
-	this.bones = [];
-	this.boneMatrices = [];
+	this.bones = bones.slice( 0 );
+	this.boneMatrices = new Float32Array( this.bones.length * 16 );
 
-	var bone, gbone, p, q, s;
+	// use the supplied bone inverses or calculate the inverses
 
-	if ( boneList !== undefined ) {
+	if ( boneInverses === undefined ) {
 
-		for ( var b = 0; b < boneList.length; ++b ) {
+		this.calculateInverses();
 
-			gbone = boneList[ b ];
+	} else {
 
-			p = gbone.pos;
-			q = gbone.rotq;
-			s = gbone.scl;
+		if ( this.bones.length === boneInverses.length ) {
 
-			bone = this.addBone();
-
-			bone.name = gbone.name;
-			bone.position.set( p[0], p[1], p[2] );
-			bone.quaternion.set( q[0], q[1], q[2], q[3] );
-
-			if ( s !== undefined ) {
-
-				bone.scale.set( s[0], s[1], s[2] );
-
-			} else {
-
-				bone.scale.set( 1, 1, 1 );
-
-			}
-
-		}
-
-		for ( var b = 0; b < boneList.length; ++b ) {
-
-			gbone = boneList[ b ];
-
-			if ( gbone.parent !== -1 ) {
-
-				this.bones[ gbone.parent ].add( this.bones[ b ] );
-
-			}
-
-		}
-
-		//
-
-		var nBones = this.bones.length;
-
-		if ( this.useVertexTexture ) {
-
-			// layout (1 matrix = 4 pixels)
-			//  RGBA RGBA RGBA RGBA (=> column1, column2, column3, column4)
-			//  with  8x8  pixel texture max   16 bones  (8 * 8  / 4)
-			//     16x16 pixel texture max   64 bones (16 * 16 / 4)
-			//     32x32 pixel texture max  256 bones (32 * 32 / 4)
-			//     64x64 pixel texture max 1024 bones (64 * 64 / 4)
-
-			var size;
-
-			if ( nBones > 256 )
-				size = 64;
-			else if ( nBones > 64 )
-				size = 32;
-			else if ( nBones > 16 )
-				size = 16;
-			else
-				size = 8;
-
-			this.boneTextureWidth = size;
-			this.boneTextureHeight = size;
-
-			this.boneMatrices = new Float32Array( this.boneTextureWidth * this.boneTextureHeight * 4 ); // 4 floats per RGBA pixel
-			this.boneTexture = new THREE.DataTexture( this.boneMatrices, this.boneTextureWidth, this.boneTextureHeight, THREE.RGBAFormat, THREE.FloatType );
-			this.boneTexture.minFilter = THREE.NearestFilter;
-			this.boneTexture.magFilter = THREE.NearestFilter;
-			this.boneTexture.generateMipmaps = false;
-			this.boneTexture.flipY = false;
+			this.boneInverses = boneInverses.slice( 0 );
 
 		} else {
 
-			this.boneMatrices = new Float32Array( 16 * nBones );
+			console.warn( 'THREE.Skeleton boneInverses is the wrong length.' );
+
+			this.boneInverses = [];
+
+			for ( var i = 0, il = this.bones.length; i < il; i ++ ) {
+
+				this.boneInverses.push( new Matrix4() );
+
+			}
 
 		}
 
 	}
 
-};
+}
 
+Object.assign( Skeleton.prototype, {
 
-THREE.Skeleton.prototype = Object.create( THREE.Mesh.prototype );
+	calculateInverses: function () {
 
+		this.boneInverses = [];
 
-THREE.Skeleton.prototype.addBone = function( bone ) {
+		for ( var i = 0, il = this.bones.length; i < il; i ++ ) {
 
-	if ( bone === undefined ) {
+			var inverse = new Matrix4();
 
-		bone = new THREE.Bone( this );
+			if ( this.bones[ i ] ) {
+
+				inverse.getInverse( this.bones[ i ].matrixWorld );
+
+			}
+
+			this.boneInverses.push( inverse );
+
+		}
+
+	},
+
+	pose: function () {
+
+		var bone, i, il;
+
+		// recover the bind-time world matrices
+
+		for ( i = 0, il = this.bones.length; i < il; i ++ ) {
+
+			bone = this.bones[ i ];
+
+			if ( bone ) {
+
+				bone.matrixWorld.getInverse( this.boneInverses[ i ] );
+
+			}
+
+		}
+
+		// compute the local matrices, positions, rotations and scales
+
+		for ( i = 0, il = this.bones.length; i < il; i ++ ) {
+
+			bone = this.bones[ i ];
+
+			if ( bone ) {
+
+				if ( bone.parent && bone.parent.isBone ) {
+
+					bone.matrix.getInverse( bone.parent.matrixWorld );
+					bone.matrix.multiply( bone.matrixWorld );
+
+				} else {
+
+					bone.matrix.copy( bone.matrixWorld );
+
+				}
+
+				bone.matrix.decompose( bone.position, bone.quaternion, bone.scale );
+
+			}
+
+		}
+
+	},
+
+	update: ( function () {
+
+		var offsetMatrix = new Matrix4();
+		var identityMatrix = new Matrix4();
+
+		return function update() {
+
+			var bones = this.bones;
+			var boneInverses = this.boneInverses;
+			var boneMatrices = this.boneMatrices;
+			var boneTexture = this.boneTexture;
+
+			// flatten bone matrices to array
+
+			for ( var i = 0, il = bones.length; i < il; i ++ ) {
+
+				// compute the offset between the current and the original transform
+
+				var matrix = bones[ i ] ? bones[ i ].matrixWorld : identityMatrix;
+
+				offsetMatrix.multiplyMatrices( matrix, boneInverses[ i ] );
+				offsetMatrix.toArray( boneMatrices, i * 16 );
+
+			}
+
+			if ( boneTexture !== undefined ) {
+
+				boneTexture.needsUpdate = true;
+
+			}
+
+		};
+
+	} )(),
+
+	clone: function () {
+
+		return new Skeleton( this.bones, this.boneInverses );
 
 	}
 
-	this.bones.push( bone );
-
-	return bone;
-
-};
+} );
 
 
-THREE.Skeleton.prototype.calculateInverses = function( bone ) {
-
-	this.boneInverses = [];
-
-	for ( var b = 0, bl = this.bones.length; b < bl; ++b ) {
-
-		var inverse = new THREE.Matrix4();
-
-		inverse.getInverse( this.bones[ b ].skinMatrix );
-
-		this.boneInverses.push( inverse );
-
-	}
-
-};
+export { Skeleton };
