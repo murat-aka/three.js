@@ -1,19 +1,18 @@
-import { Box3 } from './Box3.js';
-import { Vector3 } from './Vector3.js';
-
 /**
- * @author bhouston / http://clara.io
+ * @author bhouston / http://exocortex.com
  * @author mrdoob / http://mrdoob.com/
  */
 
-function Sphere( center, radius ) {
+THREE.Sphere = function ( center, radius ) {
 
-	this.center = ( center !== undefined ) ? center : new Vector3();
+	this.center = ( center !== undefined ) ? center : new THREE.Vector3();
 	this.radius = ( radius !== undefined ) ? radius : 0;
 
-}
+};
 
-Object.assign( Sphere.prototype, {
+THREE.Sphere.prototype = {
+
+	constructor: THREE.Sphere,
 
 	set: function ( center, radius ) {
 
@@ -21,14 +20,14 @@ Object.assign( Sphere.prototype, {
 		this.radius = radius;
 
 		return this;
-
 	},
+
 
 	setFromPoints: function () {
 
-		var box = new Box3();
+		var box = new THREE.Box3();
 
-		return function setFromPoints( points, optionalCenter ) {
+		return function ( points, optionalCenter )  {
 
 			var center = this.center;
 
@@ -38,7 +37,7 @@ Object.assign( Sphere.prototype, {
 
 			} else {
 
-				box.setFromPoints( points ).getCenter( center );
+				box.setFromPoints( points ).center( center );
 
 			}
 
@@ -52,17 +51,11 @@ Object.assign( Sphere.prototype, {
 
 			this.radius = Math.sqrt( maxRadiusSq );
 
-			return this;
-
-		};
+			return this;			
+ 		
+ 		};
 
 	}(),
-
-	clone: function () {
-
-		return new this.constructor().copy( this );
-
-	},
 
 	copy: function ( sphere ) {
 
@@ -99,24 +92,11 @@ Object.assign( Sphere.prototype, {
 
 	},
 
-	intersectsBox: function ( box ) {
-
-		return box.intersectsSphere( this );
-
-	},
-
-	intersectsPlane: function ( plane ) {
-
-		return Math.abs( plane.distanceToPoint( this.center ) ) <= this.radius;
-
-	},
-
 	clampPoint: function ( point, optionalTarget ) {
 
 		var deltaLengthSq = this.center.distanceToSquared( point );
 
-		var result = optionalTarget || new Vector3();
-
+		var result = optionalTarget || new THREE.Vector3();
 		result.copy( point );
 
 		if ( deltaLengthSq > ( this.radius * this.radius ) ) {
@@ -132,7 +112,7 @@ Object.assign( Sphere.prototype, {
 
 	getBoundingBox: function ( optionalTarget ) {
 
-		var box = optionalTarget || new Box3();
+		var box = optionalTarget || new THREE.Box3();
 
 		box.set( this.center, this.center );
 		box.expandByScalar( this.radius );
@@ -162,9 +142,12 @@ Object.assign( Sphere.prototype, {
 
 		return sphere.center.equals( this.center ) && ( sphere.radius === this.radius );
 
+	},
+
+	clone: function () {
+
+		return new THREE.Sphere().copy( this );
+
 	}
 
-} );
-
-
-export { Sphere };
+};

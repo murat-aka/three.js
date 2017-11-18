@@ -15,10 +15,7 @@
 	</head>
 	<body>
 
-		<script src="../build/three.js"></script>
-
-		<script src="js/renderers/Projector.js"></script>
-		<script src="js/renderers/CanvasRenderer.js"></script>
+		<script src="../build/three.min.js"></script>
 
 		<script src="js/libs/stats.min.js"></script>
 		<script src="js/libs/tween.min.js"></script>
@@ -26,10 +23,7 @@
 		<script>
 
 			var container, stats;
-			var camera, scene, renderer;
-			
-			var raycaster;
-			var mouse;
+			var camera, scene, projector, renderer;
 
 			init();
 			animate();
@@ -44,7 +38,7 @@
 				info.style.top = '10px';
 				info.style.width = '100%';
 				info.style.textAlign = 'center';
-				info.innerHTML = '<a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - clickable objects';
+				info.innerHTML = '<a href="http://threejs.org" target="_blank">three.js</a> - clickable objects';
 				container.appendChild( info );
 
 				camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 10000 );
@@ -52,7 +46,6 @@
 				camera.position.z = 500;
 
 				scene = new THREE.Scene();
-				scene.background = new THREE.Color( 0xf0f0f0 );
 
 				var geometry = new THREE.BoxGeometry( 100, 100, 100 );
 
@@ -71,22 +64,21 @@
 					scene.add( object );
 
 				}
-				
-				//
-				
-				raycaster = new THREE.Raycaster();
-				mouse = new THREE.Vector2();
+
+				projector = new THREE.Projector();
 
 				renderer = new THREE.CanvasRenderer();
-				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setClearColor( 0xf0f0f0 );
 				renderer.setSize( window.innerWidth, window.innerHeight );
+
 				container.appendChild(renderer.domElement);
 
 				stats = new Stats();
-				container.appendChild( stats.dom );
+				stats.domElement.style.position = 'absolute';
+				stats.domElement.style.top = '0px';
+				container.appendChild( stats.domElement );
 
 				document.addEventListener( 'mousedown', onDocumentMouseDown, false );
-				document.addEventListener( 'touchstart', onDocumentTouchStart, false );
 
 				//
 
@@ -102,25 +94,15 @@
 				renderer.setSize( window.innerWidth, window.innerHeight );
 
 			}
-			
-			function onDocumentTouchStart( event ) {
-				
-				event.preventDefault();
-				
-				event.clientX = event.touches[0].clientX;
-				event.clientY = event.touches[0].clientY;
-				onDocumentMouseDown( event );
-
-			}	
 
 			function onDocumentMouseDown( event ) {
 
 				event.preventDefault();
 
-				mouse.x = ( event.clientX / renderer.domElement.clientWidth ) * 2 - 1;
-				mouse.y = - ( event.clientY / renderer.domElement.clientHeight ) * 2 + 1;
+				var vector = new THREE.Vector3( ( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1, 0.5 );
+				projector.unprojectVector( vector, camera );
 
-				raycaster.setFromCamera( mouse, camera );
+				var raycaster = new THREE.Raycaster( camera.position, vector.sub( camera.position ).normalize() );
 
 				var intersects = raycaster.intersectObjects( scene.children );
 

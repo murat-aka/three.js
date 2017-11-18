@@ -1,20 +1,13 @@
-/**
- * @author mrdoob / http://mrdoob.com/
- */
+Sidebar.Geometry.IcosahedronGeometry = function ( signals, object ) {
 
-Sidebar.Geometry.IcosahedronGeometry = function ( editor, object ) {
-
-	var signals = editor.signals;
-
-	var container = new UI.Row();
+	var container = new UI.Panel();
 
 	var geometry = object.geometry;
-	var parameters = geometry.parameters;
 
 	// radius
 
-	var radiusRow = new UI.Row();
-	var radius = new UI.Number( parameters.radius ).onChange( update );
+	var radiusRow = new UI.Panel();
+	var radius = new UI.Number( geometry.parameters.radius ).onChange( update );
 
 	radiusRow.add( new UI.Text( 'Radius' ).setWidth( '90px' ) );
 	radiusRow.add( radius );
@@ -23,8 +16,8 @@ Sidebar.Geometry.IcosahedronGeometry = function ( editor, object ) {
 
 	// detail
 
-	var detailRow = new UI.Row();
-	var detail = new UI.Integer( parameters.detail ).setRange( 0, Infinity ).onChange( update );
+	var detailRow = new UI.Panel();
+	var detail = new UI.Integer( geometry.parameters.detail ).setRange( 0, Infinity ).onChange( update );
 
 	detailRow.add( new UI.Text( 'Detail' ).setWidth( '90px' ) );
 	detailRow.add( detail );
@@ -36,10 +29,16 @@ Sidebar.Geometry.IcosahedronGeometry = function ( editor, object ) {
 
 	function update() {
 
-		editor.execute( new SetGeometryCommand( object, new THREE[ geometry.type ](
+		delete object.__webglInit; // TODO: Remove hack (WebGLRenderer refactoring)
+
+		object.geometry.dispose();
+
+		object.geometry = new THREE.IcosahedronGeometry(
 			radius.getValue(),
 			detail.getValue()
-		) ) );
+		);
+
+		object.geometry.computeBoundingSphere();
 
 		signals.objectChanged.dispatch( object );
 
@@ -47,6 +46,4 @@ Sidebar.Geometry.IcosahedronGeometry = function ( editor, object ) {
 
 	return container;
 
-};
-
-Sidebar.Geometry.IcosahedronBufferGeometry = Sidebar.Geometry.IcosahedronGeometry;
+}

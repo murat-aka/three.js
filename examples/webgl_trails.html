@@ -16,7 +16,7 @@
 	</head>
 	<body>
 
-		<script src="../build/three.js"></script>
+		<script src="../build/three.min.js"></script>
 
 		<script src="js/libs/stats.min.js"></script>
 
@@ -26,13 +26,18 @@
 
 			var camera, scene, renderer;
 
+			var mesh, zmesh, lightMesh, geometry;
+
 			var mouseX = 0, mouseY = 0;
 
 			var windowHalfX = window.innerWidth / 2;
 			var windowHalfY = window.innerHeight / 2;
 
+			document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+
 			init();
 			animate();
+
 
 			function init() {
 
@@ -59,23 +64,24 @@
 
 				}
 
-				var material = new THREE.PointsMaterial( { size: 1, vertexColors: THREE. VertexColors, depthTest: false, opacity: 0.5, sizeAttenuation: false, transparent: true } );
+				var material = new THREE.ParticleSystemMaterial( { size: 1, vertexColors: THREE. VertexColors, depthTest: false, opacity: 0.5, sizeAttenuation: false, transparent: true } );
 
-				var mesh = new THREE.Points( geometry, material );
+				var mesh = new THREE.ParticleSystem( geometry, material );
 				scene.add( mesh );
 
 				renderer = new THREE.WebGLRenderer( { preserveDrawingBuffer: true } );
-				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.sortObjects = false;
 				renderer.autoClearColor = false;
 				container.appendChild( renderer.domElement );
 
 				stats = new Stats();
-				container.appendChild( stats.dom );
+				stats.domElement.style.position = 'absolute';
+				stats.domElement.style.top = '0px';
+				stats.domElement.style.zIndex = 100;
+				container.appendChild( stats.domElement );
 
 				//
-
-				document.addEventListener( 'mousemove', onDocumentMouseMove, false );
 
 				window.addEventListener( 'resize', onWindowResize, false );
 

@@ -2,52 +2,18 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
-		<base href="../../" />
-		<script src="list.js"></script>
-		<script src="page.js"></script>
-		<link type="text/css" rel="stylesheet" href="page.css" />
+		<script src="../../list.js"></script>
+		<script src="../../page.js"></script>
+		<link type="text/css" rel="stylesheet" href="../../page.css" />
 	</head>
 	<body>
 		<h1>[name]</h1>
 
-		<div class="desc">
-			JavaScript events for custom objects.<br />
-			[link:https://github.com/mrdoob/eventdispatcher.js Eventdispatcher on GitHub]
-		</div>
-
-		<h2>Example</h2>
-
-		<code>
-// Adding events to a custom object
-
-var Car = function () {
-
-    this.start = function () {
-
-        this.dispatchEvent( { type: 'start', message: 'vroom vroom!' } );
-
-    };
-
-};
-
-// Mixin the EventDispatcher.prototype with the custom object prototype
-
-Object.assign( Car.prototype, EventDispatcher.prototype );
-
-// Using events with the custom object
-
-var car = new Car();
-
-car.addEventListener( 'start', function ( event ) {
-
-    alert( event.message );
-
-} );
-
-car.start();
-		</code>
+		<div class="desc">JavaScript events for custom objects.<br />
+		<a href="https://github.com/mrdoob/eventdispatcher.js">https://github.com/mrdoob/eventdispatcher.js</a></div>
 
 		<h2>Constructor</h2>
+
 
 		<h3>[name]()</h3>
 		<div>
@@ -57,7 +23,7 @@ car.start();
 
 		<h2>Methods</h2>
 
-		<h3>[method:null addEventListener]( [page:String type], [page:Function listener] )</h3>
+		<h3>.addEventListener( [page:String type], [page:Function listener] )</h3>
 		<div>
 		type - The type of event to listen to.<br />
 		listener - The function that gets called when the event is fired.
@@ -66,7 +32,7 @@ car.start();
 		Adds a listener to an event type.
 		</div>
 
-		<h3>[method:Boolean hasEventListener]( [page:String type], [page:Function listener] )</h3>
+		<h3>.hasEventListener( [page:String type], [page:Function listener] )</h3>
 		<div>
 		type - The type of event to listen to.<br />
 		listener - The function that gets called when the event is fired.
@@ -75,7 +41,7 @@ car.start();
 		Checks if listener is added to an event type.
 		</div>
 
-		<h3>[method:null removeEventListener]( [page:String type], [page:Function listener] )</h3>
+		<h3>.removeEventListener( [page:String type], [page:Function listener] )</h3>
 		<div>
 		type - The type of the listener that gets removed.<br />
 		listener - The listener function that gets removed.
@@ -84,9 +50,9 @@ car.start();
 		Removes a listener from an event type.
 		</div>
 
-		<h3>[method:null dispatchEvent]( [page:object event] )</h3>
+		<h3>.dispatchEvent( [page:String type] )</h3>
 		<div>
-		event - The event that gets fired.
+		type - The type of event that gets fired.
 		</div>
 		<div>
 		Fire an event type.

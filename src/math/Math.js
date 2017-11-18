@@ -3,62 +3,57 @@
  * @author mrdoob / http://mrdoob.com/
  */
 
-var _Math = {
-
-	DEG2RAD: Math.PI / 180,
-	RAD2DEG: 180 / Math.PI,
+THREE.Math = {
 
 	generateUUID: function () {
 
 		// http://www.broofa.com/Tools/Math.uuid.htm
-		// Replaced .join with string concatenation (@takahirox)
-
-		var chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split( '' );
+		
+		var chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('');
+		var uuid = new Array(36);
 		var rnd = 0, r;
 
-		return function generateUUID() {
-
-			var uuid = '';
+		return function () {
 
 			for ( var i = 0; i < 36; i ++ ) {
 
-				if ( i === 8 || i === 13 || i === 18 || i === 23 ) {
-
-					uuid += '-';
-
-				} else if ( i === 14 ) {
-
-					uuid += '4';
-
+				if ( i == 8 || i == 13 || i == 18 || i == 23 ) {
+			
+					uuid[ i ] = '-';
+			
+				} else if ( i == 14 ) {
+			
+					uuid[ i ] = '4';
+			
 				} else {
-
-					if ( rnd <= 0x02 ) rnd = 0x2000000 + ( Math.random() * 0x1000000 ) | 0;
+			
+					if (rnd <= 0x02) rnd = 0x2000000 + (Math.random()*0x1000000)|0;
 					r = rnd & 0xf;
 					rnd = rnd >> 4;
-					uuid += chars[ ( i === 19 ) ? ( r & 0x3 ) | 0x8 : r ];
+					uuid[i] = chars[(i == 19) ? (r & 0x3) | 0x8 : r];
 
 				}
-
 			}
-
-			return uuid;
+			
+			return uuid.join('');
 
 		};
 
 	}(),
 
-	clamp: function ( value, min, max ) {
+	// Clamp value to range <a, b>
 
-		return Math.max( min, Math.min( max, value ) );
+	clamp: function ( x, a, b ) {
+
+		return ( x < a ) ? a : ( ( x > b ) ? b : x );
 
 	},
 
-	// compute euclidian modulo of m % n
-	// https://en.wikipedia.org/wiki/Modulo_operation
+	// Clamp value to range <a, inf)
 
-	euclideanModulo: function ( n, m ) {
+	clampBottom: function ( x, a ) {
 
-		return ( ( n % m ) + m ) % m;
+		return x < a ? a : x;
 
 	},
 
@@ -70,14 +65,6 @@ var _Math = {
 
 	},
 
-	// https://en.wikipedia.org/wiki/Linear_interpolation
-
-	lerp: function ( x, y, t ) {
-
-		return ( 1 - t ) * x + t * y;
-
-	},
-
 	// http://en.wikipedia.org/wiki/Smoothstep
 
 	smoothstep: function ( x, min, max ) {
@@ -85,9 +72,9 @@ var _Math = {
 		if ( x <= min ) return 0;
 		if ( x >= max ) return 1;
 
-		x = ( x - min ) / ( max - min );
+		x = ( x - min )/( max - min );
 
-		return x * x * ( 3 - 2 * x );
+		return x*x*(3 - 2*x);
 
 	},
 
@@ -96,9 +83,18 @@ var _Math = {
 		if ( x <= min ) return 0;
 		if ( x >= max ) return 1;
 
-		x = ( x - min ) / ( max - min );
+		x = ( x - min )/( max - min );
 
-		return x * x * x * ( x * ( x * 6 - 15 ) + 10 );
+		return x*x*x*(x*(x*6 - 15) + 10);
+
+	},
+
+	// Random float from <0, 1> with 16 bits of randomness
+	// (standard Math.random() creates repetitive patterns when applied over larger space)
+
+	random16: function () {
+
+		return ( 65280 * Math.random() + 255 * Math.random() ) / 65535;
 
 	},
 
@@ -126,37 +122,40 @@ var _Math = {
 
 	},
 
-	degToRad: function ( degrees ) {
+	sign: function ( x ) {
 
-		return degrees * _Math.DEG2RAD;
-
-	},
-
-	radToDeg: function ( radians ) {
-
-		return radians * _Math.RAD2DEG;
+		return ( x < 0 ) ? - 1 : ( x > 0 ) ? 1 : 0;
 
 	},
+
+	degToRad: function() {
+
+		var degreeToRadiansFactor = Math.PI / 180;
+
+		return function ( degrees ) {
+
+			return degrees * degreeToRadiansFactor;
+
+		};
+
+	}(),
+
+	radToDeg: function() {
+
+		var radianToDegreesFactor = 180 / Math.PI;
+
+		return function ( radians ) {
+
+			return radians * radianToDegreesFactor;
+
+		};
+
+	}(),
 
 	isPowerOfTwo: function ( value ) {
 
 		return ( value & ( value - 1 ) ) === 0 && value !== 0;
 
-	},
-
-	ceilPowerOfTwo: function ( value ) {
-
-		return Math.pow( 2, Math.ceil( Math.log( value ) / Math.LN2 ) );
-
-	},
-
-	floorPowerOfTwo: function ( value ) {
-
-		return Math.pow( 2, Math.floor( Math.log( value ) / Math.LN2 ) );
-
 	}
 
 };
-
-
-export { _Math };

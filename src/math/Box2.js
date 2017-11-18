@@ -1,17 +1,17 @@
-import { Vector2 } from './Vector2.js';
-
 /**
- * @author bhouston / http://clara.io
+ * @author bhouston / http://exocortex.com
  */
 
-function Box2( min, max ) {
+THREE.Box2 = function ( min, max ) {
 
-	this.min = ( min !== undefined ) ? min : new Vector2( + Infinity, + Infinity );
-	this.max = ( max !== undefined ) ? max : new Vector2( - Infinity, - Infinity );
+	this.min = ( min !== undefined ) ? min : new THREE.Vector2( Infinity, Infinity );
+	this.max = ( max !== undefined ) ? max : new THREE.Vector2( -Infinity, -Infinity );
 
-}
+};
 
-Object.assign( Box2.prototype, {
+THREE.Box2.prototype = {
+
+	constructor: THREE.Box2,
 
 	set: function ( min, max ) {
 
@@ -24,11 +24,42 @@ Object.assign( Box2.prototype, {
 
 	setFromPoints: function ( points ) {
 
-		this.makeEmpty();
+		if ( points.length > 0 ) {
 
-		for ( var i = 0, il = points.length; i < il; i ++ ) {
+			var point = points[ 0 ];
 
-			this.expandByPoint( points[ i ] );
+			this.min.copy( point );
+			this.max.copy( point );
+
+			for ( var i = 1, il = points.length; i < il; i ++ ) {
+
+				point = points[ i ];
+
+				if ( point.x < this.min.x ) {
+
+					this.min.x = point.x;
+
+				} else if ( point.x > this.max.x ) {
+
+					this.max.x = point.x;
+
+				}
+
+				if ( point.y < this.min.y ) {
+
+					this.min.y = point.y;
+
+				} else if ( point.y > this.max.y ) {
+
+					this.max.y = point.y;
+
+				}
+
+			}
+
+		} else {
+
+			this.makeEmpty();
 
 		}
 
@@ -38,9 +69,9 @@ Object.assign( Box2.prototype, {
 
 	setFromCenterAndSize: function () {
 
-		var v1 = new Vector2();
+		var v1 = new THREE.Vector2();
 
-		return function setFromCenterAndSize( center, size ) {
+		return function ( center, size ) {
 
 			var halfSize = v1.copy( size ).multiplyScalar( 0.5 );
 			this.min.copy( center ).sub( halfSize );
@@ -51,12 +82,6 @@ Object.assign( Box2.prototype, {
 		};
 
 	}(),
-
-	clone: function () {
-
-		return new this.constructor().copy( this );
-
-	},
 
 	copy: function ( box ) {
 
@@ -69,14 +94,14 @@ Object.assign( Box2.prototype, {
 
 	makeEmpty: function () {
 
-		this.min.x = this.min.y = + Infinity;
-		this.max.x = this.max.y = - Infinity;
+		this.min.x = this.min.y = Infinity;
+		this.max.x = this.max.y = -Infinity;
 
 		return this;
 
 	},
 
-	isEmpty: function () {
+	empty: function () {
 
 		// this is a more robust check for empty than ( volume <= 0 ) because volume can get positive with two negative axes
 
@@ -84,17 +109,17 @@ Object.assign( Box2.prototype, {
 
 	},
 
-	getCenter: function ( optionalTarget ) {
+	center: function ( optionalTarget ) {
 
-		var result = optionalTarget || new Vector2();
-		return this.isEmpty() ? result.set( 0, 0 ) : result.addVectors( this.min, this.max ).multiplyScalar( 0.5 );
+		var result = optionalTarget || new THREE.Vector2();
+		return result.addVectors( this.min, this.max ).multiplyScalar( 0.5 );
 
 	},
 
-	getSize: function ( optionalTarget ) {
+	size: function ( optionalTarget ) {
 
-		var result = optionalTarget || new Vector2();
-		return this.isEmpty() ? result.set( 0, 0 ) : result.subVectors( this.max, this.min );
+		var result = optionalTarget || new THREE.Vector2();
+		return result.subVectors( this.max, this.min );
 
 	},
 
@@ -104,7 +129,6 @@ Object.assign( Box2.prototype, {
 		this.max.max( point );
 
 		return this;
-
 	},
 
 	expandByVector: function ( vector ) {
@@ -113,29 +137,39 @@ Object.assign( Box2.prototype, {
 		this.max.add( vector );
 
 		return this;
-
 	},
 
 	expandByScalar: function ( scalar ) {
 
-		this.min.addScalar( - scalar );
+		this.min.addScalar( -scalar );
 		this.max.addScalar( scalar );
 
 		return this;
-
 	},
 
 	containsPoint: function ( point ) {
 
-		return point.x < this.min.x || point.x > this.max.x ||
-			point.y < this.min.y || point.y > this.max.y ? false : true;
+		if ( point.x < this.min.x || point.x > this.max.x ||
+		     point.y < this.min.y || point.y > this.max.y ) {
+
+			return false;
+
+		}
+
+		return true;
 
 	},
 
 	containsBox: function ( box ) {
 
-		return this.min.x <= box.min.x && box.max.x <= this.max.x &&
-			this.min.y <= box.min.y && box.max.y <= this.max.y;
+		if ( ( this.min.x <= box.min.x ) && ( box.max.x <= this.max.x ) &&
+		     ( this.min.y <= box.min.y ) && ( box.max.y <= this.max.y ) ) {
+
+			return true;
+
+		}
+
+		return false;
 
 	},
 
@@ -144,7 +178,7 @@ Object.assign( Box2.prototype, {
 		// This can potentially have a divide by zero if the box
 		// has a size dimension of 0.
 
-		var result = optionalTarget || new Vector2();
+		var result = optionalTarget || new THREE.Vector2();
 
 		return result.set(
 			( point.x - this.min.x ) / ( this.max.x - this.min.x ),
@@ -153,27 +187,33 @@ Object.assign( Box2.prototype, {
 
 	},
 
-	intersectsBox: function ( box ) {
+	isIntersectionBox: function ( box ) {
 
-		// using 4 splitting planes to rule out intersections
+		// using 6 splitting planes to rule out intersections.
 
-		return box.max.x < this.min.x || box.min.x > this.max.x ||
-			box.max.y < this.min.y || box.min.y > this.max.y ? false : true;
+		if ( box.max.x < this.min.x || box.min.x > this.max.x ||
+		     box.max.y < this.min.y || box.min.y > this.max.y ) {
+
+			return false;
+
+		}
+
+		return true;
 
 	},
 
 	clampPoint: function ( point, optionalTarget ) {
 
-		var result = optionalTarget || new Vector2();
+		var result = optionalTarget || new THREE.Vector2();
 		return result.copy( point ).clamp( this.min, this.max );
 
 	},
 
 	distanceToPoint: function () {
 
-		var v1 = new Vector2();
+		var v1 = new THREE.Vector2();
 
-		return function distanceToPoint( point ) {
+		return function ( point ) {
 
 			var clampedPoint = v1.copy( point ).clamp( this.min, this.max );
 			return clampedPoint.sub( point ).length();
@@ -213,9 +253,12 @@ Object.assign( Box2.prototype, {
 
 		return box.min.equals( this.min ) && box.max.equals( this.max );
 
+	},
+
+	clone: function () {
+
+		return new THREE.Box2().copy( this );
+
 	}
 
-} );
-
-
-export { Box2 };
+};

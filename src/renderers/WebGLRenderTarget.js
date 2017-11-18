@@ -1,84 +1,75 @@
-import { EventDispatcher } from '../core/EventDispatcher.js';
-import { Texture } from '../textures/Texture.js';
-import { LinearFilter } from '../constants.js';
-import { Vector4 } from '../math/Vector4.js';
-import { _Math } from '../math/Math.js';
-
 /**
  * @author szimek / https://github.com/szimek/
  * @author alteredq / http://alteredqualia.com/
- * @author Marius Kintel / https://github.com/kintel
  */
 
-/*
- In options, we can specify:
- * Texture parameters for an auto-generated target texture
- * depthBuffer/stencilBuffer: Booleans to indicate if we should generate these buffers
-*/
-function WebGLRenderTarget( width, height, options ) {
-
-	this.uuid = _Math.generateUUID();
+THREE.WebGLRenderTarget = function ( width, height, options ) {
 
 	this.width = width;
 	this.height = height;
 
-	this.scissor = new Vector4( 0, 0, width, height );
-	this.scissorTest = false;
-
-	this.viewport = new Vector4( 0, 0, width, height );
-
 	options = options || {};
 
-	if ( options.minFilter === undefined ) options.minFilter = LinearFilter;
+	this.wrapS = options.wrapS !== undefined ? options.wrapS : THREE.ClampToEdgeWrapping;
+	this.wrapT = options.wrapT !== undefined ? options.wrapT : THREE.ClampToEdgeWrapping;
 
-	this.texture = new Texture( undefined, undefined, options.wrapS, options.wrapT, options.magFilter, options.minFilter, options.format, options.type, options.anisotropy, options.encoding );
+	this.magFilter = options.magFilter !== undefined ? options.magFilter : THREE.LinearFilter;
+	this.minFilter = options.minFilter !== undefined ? options.minFilter : THREE.LinearMipMapLinearFilter;
+
+	this.anisotropy = options.anisotropy !== undefined ? options.anisotropy : 1;
+
+	this.offset = new THREE.Vector2( 0, 0 );
+	this.repeat = new THREE.Vector2( 1, 1 );
+
+	this.format = options.format !== undefined ? options.format : THREE.RGBAFormat;
+	this.type = options.type !== undefined ? options.type : THREE.UnsignedByteType;
 
 	this.depthBuffer = options.depthBuffer !== undefined ? options.depthBuffer : true;
 	this.stencilBuffer = options.stencilBuffer !== undefined ? options.stencilBuffer : true;
-	this.depthTexture = options.depthTexture !== undefined ? options.depthTexture : null;
 
-}
+	this.generateMipmaps = true;
 
-Object.assign( WebGLRenderTarget.prototype, EventDispatcher.prototype, {
+	this.shareDepthFrom = null;
 
-	isWebGLRenderTarget: true,
+};
+
+THREE.WebGLRenderTarget.prototype = {
+
+	constructor: THREE.WebGLRenderTarget,
 
 	setSize: function ( width, height ) {
 
-		if ( this.width !== width || this.height !== height ) {
-
-			this.width = width;
-			this.height = height;
-
-			this.dispose();
-
-		}
-
-		this.viewport.set( 0, 0, width, height );
-		this.scissor.set( 0, 0, width, height );
+		this.width = width;
+		this.height = height;
 
 	},
 
 	clone: function () {
 
-		return new this.constructor().copy( this );
+		var tmp = new THREE.WebGLRenderTarget( this.width, this.height );
 
-	},
+		tmp.wrapS = this.wrapS;
+		tmp.wrapT = this.wrapT;
 
-	copy: function ( source ) {
+		tmp.magFilter = this.magFilter;
+		tmp.minFilter = this.minFilter;
 
-		this.width = source.width;
-		this.height = source.height;
+		tmp.anisotropy = this.anisotropy;
 
-		this.viewport.copy( source.viewport );
+		tmp.offset.copy( this.offset );
+		tmp.repeat.copy( this.repeat );
 
-		this.texture = source.texture.clone();
+		tmp.format = this.format;
+		tmp.type = this.type;
 
-		this.depthBuffer = source.depthBuffer;
-		this.stencilBuffer = source.stencilBuffer;
-		this.depthTexture = source.depthTexture;
+		tmp.depthBuffer = this.depthBuffer;
+		tmp.stencilBuffer = this.stencilBuffer;
 
-		return this;
+		tmp.generateMipmaps = this.generateMipmaps;
+
+		tmp.shareDepthFrom = this.shareDepthFrom;
+
+		return tmp;
 
 	},
 
@@ -88,7 +79,6 @@ Object.assign( WebGLRenderTarget.prototype, EventDispatcher.prototype, {
 
 	}
 
-} );
+};
 
-
-export { WebGLRenderTarget };
+THREE.EventDispatcher.prototype.apply( THREE.WebGLRenderTarget.prototype );

@@ -1,95 +1,53 @@
-/**
- * @author mrdoob / http://mrdoob.com/
- */
-
 var Editor = function () {
 
-	this.DEFAULT_CAMERA = new THREE.PerspectiveCamera( 50, 1, 0.1, 10000 );
-	this.DEFAULT_CAMERA.name = 'Camera';
-	this.DEFAULT_CAMERA.position.set( 20, 10, 20 );
-	this.DEFAULT_CAMERA.lookAt( new THREE.Vector3() );
-
-	var Signal = signals.Signal;
+	var SIGNALS = signals;
 
 	this.signals = {
 
-		// script
-
-		editScript: new Signal(),
-
-		// player
-
-		startPlayer: new Signal(),
-		stopPlayer: new Signal(),
-
 		// actions
 
-		showModal: new Signal(),
+		playAnimations: new SIGNALS.Signal(),
 
 		// notifications
 
-		editorCleared: new Signal(),
+		themeChanged: new SIGNALS.Signal(),
 
-		savingStarted: new Signal(),
-		savingFinished: new Signal(),
+		transformModeChanged: new SIGNALS.Signal(),
+		snapChanged: new SIGNALS.Signal(),
+		spaceChanged: new SIGNALS.Signal(),
+		rendererChanged: new SIGNALS.Signal(),
 
-		themeChanged: new Signal(),
+		sceneGraphChanged: new SIGNALS.Signal(),
 
-		transformModeChanged: new Signal(),
-		snapChanged: new Signal(),
-		spaceChanged: new Signal(),
-		rendererChanged: new Signal(),
+		cameraChanged: new SIGNALS.Signal(),
 
-		sceneBackgroundChanged: new Signal(),
-		sceneFogChanged: new Signal(),
-		sceneGraphChanged: new Signal(),
+		objectSelected: new SIGNALS.Signal(),
+		objectAdded: new SIGNALS.Signal(),
+		objectChanged: new SIGNALS.Signal(),
+		objectRemoved: new SIGNALS.Signal(),
 
-		cameraChanged: new Signal(),
+		helperAdded: new SIGNALS.Signal(),
+		helperRemoved: new SIGNALS.Signal(),
 
-		geometryChanged: new Signal(),
-
-		objectSelected: new Signal(),
-		objectFocused: new Signal(),
-
-		objectAdded: new Signal(),
-		objectChanged: new Signal(),
-		objectRemoved: new Signal(),
-
-		helperAdded: new Signal(),
-		helperRemoved: new Signal(),
-
-		materialChanged: new Signal(),
-
-		scriptAdded: new Signal(),
-		scriptChanged: new Signal(),
-		scriptRemoved: new Signal(),
-
-		windowResize: new Signal(),
-
-		showGridChanged: new Signal(),
-		refreshSidebarObject3D: new Signal(),
-		historyChanged: new Signal()
+		materialChanged: new SIGNALS.Signal(),
+		fogTypeChanged: new SIGNALS.Signal(),
+		fogColorChanged: new SIGNALS.Signal(),
+		fogParametersChanged: new SIGNALS.Signal(),
+		windowResize: new SIGNALS.Signal()
 
 	};
-
-	this.config = new Config( 'threejs-editor' );
-	this.history = new History( this );
+	
+	this.config = new Config();
 	this.storage = new Storage();
 	this.loader = new Loader( this );
 
-	this.camera = this.DEFAULT_CAMERA.clone();
-
 	this.scene = new THREE.Scene();
-	this.scene.name = 'Scene';
-	this.scene.background = new THREE.Color( 0xaaaaaa );
-
 	this.sceneHelpers = new THREE.Scene();
 
 	this.object = {};
 	this.geometries = {};
 	this.materials = {};
 	this.textures = {};
-	this.scripts = {};
 
 	this.selected = null;
 	this.helpers = {};
@@ -106,16 +64,9 @@ Editor.prototype = {
 
 	},
 
-	//
-
 	setScene: function ( scene ) {
 
-		this.scene.uuid = scene.uuid;
 		this.scene.name = scene.name;
-
-		if ( scene.background !== null ) this.scene.background = scene.background.clone();
-		if ( scene.fog !== null ) this.scene.fog = scene.fog.clone();
-
 		this.scene.userData = JSON.parse( JSON.stringify( scene.userData ) );
 
 		// avoid render per object
@@ -155,31 +106,7 @@ Editor.prototype = {
 
 	},
 
-	moveObject: function ( object, parent, before ) {
-
-		if ( parent === undefined ) {
-
-			parent = this.scene;
-
-		}
-
-		parent.add( object );
-
-		// sort children array
-
-		if ( before !== undefined ) {
-
-			var index = parent.children.indexOf( before );
-			parent.children.splice( index, 0, object );
-			parent.children.pop();
-
-		}
-
-		this.signals.sceneGraphChanged.dispatch();
-
-	},
-
-	nameObject: function ( object, name ) {
+	setObjectName: function ( object, name ) {
 
 		object.name = name;
 		this.signals.sceneGraphChanged.dispatch();
@@ -188,7 +115,9 @@ Editor.prototype = {
 
 	removeObject: function ( object ) {
 
-		if ( object.parent === null ) return; // avoid deleting the camera or scene
+		if ( object.parent === undefined ) return; // avoid deleting the camera or scene
+
+		if ( confirm( 'Delete ' + object.name + '?' ) === false ) return;
 
 		var scope = this;
 
@@ -241,8 +170,8 @@ Editor.prototype = {
 
 	addHelper: function () {
 
-		var geometry = new THREE.SphereBufferGeometry( 2, 4, 2 );
-		var material = new THREE.MeshBasicMaterial( { color: 0xff0000, visible: false } );
+		var geometry = new THREE.SphereGeometry( 20, 4, 2 );
+		var material = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
 
 		return function ( object ) {
 
@@ -250,27 +179,23 @@ Editor.prototype = {
 
 			if ( object instanceof THREE.Camera ) {
 
-				helper = new THREE.CameraHelper( object, 1 );
+				helper = new THREE.CameraHelper( object, 10 );
 
 			} else if ( object instanceof THREE.PointLight ) {
 
-				helper = new THREE.PointLightHelper( object, 1 );
+				helper = new THREE.PointLightHelper( object, 10 );
 
 			} else if ( object instanceof THREE.DirectionalLight ) {
 
-				helper = new THREE.DirectionalLightHelper( object, 1 );
+				helper = new THREE.DirectionalLightHelper( object, 20 );
 
 			} else if ( object instanceof THREE.SpotLight ) {
 
-				helper = new THREE.SpotLightHelper( object, 1 );
+				helper = new THREE.SpotLightHelper( object, 10 );
 
 			} else if ( object instanceof THREE.HemisphereLight ) {
 
-				helper = new THREE.HemisphereLightHelper( object, 1 );
-
-			} else if ( object instanceof THREE.SkinnedMesh ) {
-
-				helper = new THREE.SkeletonHelper( object );
+				helper = new THREE.HemisphereLightHelper( object, 10 );
 
 			} else {
 
@@ -282,6 +207,7 @@ Editor.prototype = {
 			var picker = new THREE.Mesh( geometry, material );
 			picker.name = 'picker';
 			picker.userData.object = object;
+			picker.visible = false;
 			helper.add( picker );
 
 			this.sceneHelpers.add( helper );
@@ -310,61 +236,17 @@ Editor.prototype = {
 
 	//
 
-	addScript: function ( object, script ) {
+	parent: function ( object, parent ) {
 
-		if ( this.scripts[ object.uuid ] === undefined ) {
+		if ( parent === undefined ) {
 
-			this.scripts[ object.uuid ] = [];
-
-		}
-
-		this.scripts[ object.uuid ].push( script );
-
-		this.signals.scriptAdded.dispatch( script );
-
-	},
-
-	removeScript: function ( object, script ) {
-
-		if ( this.scripts[ object.uuid ] === undefined ) return;
-
-		var index = this.scripts[ object.uuid ].indexOf( script );
-
-		if ( index !== - 1 ) {
-
-			this.scripts[ object.uuid ].splice( index, 1 );
+			parent = this.scene;
 
 		}
 
-		this.signals.scriptRemoved.dispatch( script );
+		parent.add( object );
 
-	},
-
-	getObjectMaterial: function ( object, slot ) {
-
-		var material = object.material;
-
-		if ( Array.isArray( material ) ) {
-
-			material = material[ slot ];
-
-		}
-
-		return material;
-
-	},
-
-	setObjectMaterial: function ( object, slot, newMaterial ) {
-
-		if ( Array.isArray( object.material ) ) {
-
-			object.material[ slot ] = newMaterial;
-
-		} else {
-
-			object.material = newMaterial;
-
-		}
+		this.signals.sceneGraphChanged.dispatch();
 
 	},
 
@@ -372,33 +254,35 @@ Editor.prototype = {
 
 	select: function ( object ) {
 
-		if ( this.selected === object ) return;
-
-		var uuid = null;
+		this.selected = object;
 
 		if ( object !== null ) {
 
-			uuid = object.uuid;
+			this.config.setKey( 'selected', object.uuid );
+
+		} else {
+
+			this.config.setKey( 'selected', null );
 
 		}
 
-		this.selected = object;
-
-		this.config.setKey( 'selected', uuid );
 		this.signals.objectSelected.dispatch( object );
 
 	},
 
 	selectById: function ( id ) {
 
-		if ( id === this.camera.id ) {
+		var scope = this;
 
-			this.select( this.camera );
-			return;
+		this.scene.traverse( function ( child ) {
 
-		}
+			if ( child.id === id ) {
 
-		this.select( this.scene.getObjectById( id, true ) );
+				scope.select( child );
+
+			}
+
+		} );
 
 	},
 
@@ -424,135 +308,93 @@ Editor.prototype = {
 
 	},
 
-	focus: function ( object ) {
+	// utils
 
-		this.signals.objectFocused.dispatch( object );
+	getObjectType: function ( object ) {
 
-	},
+		var types = {
 
-	focusById: function ( id ) {
-
-		this.focus( this.scene.getObjectById( id, true ) );
-
-	},
-
-	clear: function () {
-
-		this.history.clear();
-		this.storage.clear();
-
-		this.camera.copy( this.DEFAULT_CAMERA );
-		this.scene.background.setHex( 0xaaaaaa );
-		this.scene.fog = null;
-
-		var objects = this.scene.children;
-
-		while ( objects.length > 0 ) {
-
-			this.removeObject( objects[ 0 ] );
-
-		}
-
-		this.geometries = {};
-		this.materials = {};
-		this.textures = {};
-		this.scripts = {};
-
-		this.deselect();
-
-		this.signals.editorCleared.dispatch();
-
-	},
-
-	//
-
-	fromJSON: function ( json ) {
-
-		var loader = new THREE.ObjectLoader();
-
-		// backwards
-
-		if ( json.scene === undefined ) {
-
-			this.setScene( loader.parse( json ) );
-			return;
-
-		}
-
-		var camera = loader.parse( json.camera );
-
-		this.camera.copy( camera );
-		this.camera.aspect = this.DEFAULT_CAMERA.aspect;
-		this.camera.updateProjectionMatrix();
-
-		this.history.fromJSON( json.history );
-		this.scripts = json.scripts;
-
-		this.setScene( loader.parse( json.scene ) );
-
-	},
-
-	toJSON: function () {
-
-		// scripts clean up
-
-		var scene = this.scene;
-		var scripts = this.scripts;
-
-		for ( var key in scripts ) {
-
-			var script = scripts[ key ];
-
-			if ( script.length === 0 || scene.getObjectByProperty( 'uuid', key ) === undefined ) {
-
-				delete scripts[ key ];
-
-			}
-
-		}
-
-		//
-
-		return {
-
-			metadata: {},
-			project: {
-				gammaInput: this.config.getKey( 'project/renderer/gammaInput' ),
-				gammaOutput: this.config.getKey( 'project/renderer/gammaOutput' ),
-				shadows: this.config.getKey( 'project/renderer/shadows' ),
-				vr: this.config.getKey( 'project/vr' )
-			},
-			camera: this.camera.toJSON(),
-			scene: this.scene.toJSON(),
-			scripts: this.scripts,
-			history: this.history.toJSON()
+			'Scene': THREE.Scene,
+			'PerspectiveCamera': THREE.PerspectiveCamera,
+			'AmbientLight': THREE.AmbientLight,
+			'DirectionalLight': THREE.DirectionalLight,
+			'HemisphereLight': THREE.HemisphereLight,
+			'PointLight': THREE.PointLight,
+			'SpotLight': THREE.SpotLight,
+			'Mesh': THREE.Mesh,
+			'Sprite': THREE.Sprite,
+			'Object3D': THREE.Object3D
 
 		};
 
-	},
+		for ( var type in types ) {
 
-	objectByUuid: function ( uuid ) {
+			if ( object instanceof types[ type ] ) return type;
 
-		return this.scene.getObjectByProperty( 'uuid', uuid, true );
-
-	},
-
-	execute: function ( cmd, optionalName ) {
-
-		this.history.execute( cmd, optionalName );
+		}
 
 	},
 
-	undo: function () {
+	getGeometryType: function ( geometry ) {
 
-		this.history.undo();
+		var types = {
+
+			'BoxGeometry': THREE.BoxGeometry,
+			'CircleGeometry': THREE.CircleGeometry,
+			'CylinderGeometry': THREE.CylinderGeometry,
+			'ExtrudeGeometry': THREE.ExtrudeGeometry,
+			'IcosahedronGeometry': THREE.IcosahedronGeometry,
+			'LatheGeometry': THREE.LatheGeometry,
+			'OctahedronGeometry': THREE.OctahedronGeometry,
+			'ParametricGeometry': THREE.ParametricGeometry,
+			'PlaneGeometry': THREE.PlaneGeometry,
+			'PolyhedronGeometry': THREE.PolyhedronGeometry,
+			'ShapeGeometry': THREE.ShapeGeometry,
+			'SphereGeometry': THREE.SphereGeometry,
+			'TetrahedronGeometry': THREE.TetrahedronGeometry,
+			'TextGeometry': THREE.TextGeometry,
+			'TorusGeometry': THREE.TorusGeometry,
+			'TorusKnotGeometry': THREE.TorusKnotGeometry,
+			'TubeGeometry': THREE.TubeGeometry,
+			'Geometry': THREE.Geometry,
+			'BufferGeometry': THREE.BufferGeometry
+
+		};
+
+		for ( var type in types ) {
+
+			if ( geometry instanceof types[ type ] ) return type;
+
+		}
 
 	},
 
-	redo: function () {
+	getMaterialType: function ( material ) {
 
-		this.history.redo();
+		var types = {
+
+			'LineBasicMaterial': THREE.LineBasicMaterial,
+			'LineDashedMaterial': THREE.LineDashedMaterial,
+			'MeshBasicMaterial': THREE.MeshBasicMaterial,
+			'MeshDepthMaterial': THREE.MeshDepthMaterial,
+			'MeshFaceMaterial': THREE.MeshFaceMaterial,
+			'MeshLambertMaterial': THREE.MeshLambertMaterial,
+			'MeshNormalMaterial': THREE.MeshNormalMaterial,
+			'MeshPhongMaterial': THREE.MeshPhongMaterial,
+			'ParticleSystemMaterial': THREE.ParticleSystemMaterial,
+			'ShaderMaterial': THREE.ShaderMaterial,
+			'SpriteCanvasMaterial': THREE.SpriteCanvasMaterial,
+			'SpriteMaterial': THREE.SpriteMaterial,
+			'Material': THREE.Material
+
+		};
+
+		for ( var type in types ) {
+
+			if ( material instanceof types[ type ] ) return type;
+
+		}
 
 	}
 
-};
+}

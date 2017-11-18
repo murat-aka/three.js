@@ -18,8 +18,9 @@
 "DbgIndex" : 0,
 "DbgName"  : "Material #0",
 "colorDiffuse"  : [0.5880, 0.5880, 0.5880],
+"colorAmbient"  : [0.5880, 0.5880, 0.5880],
 "colorSpecular"  : [0.9000, 0.9000, 0.9000],
-"opacity"  : 1.0,
+"transparency"  : 1.0,
 "specularCoef"  : 10.0,
 "mapDiffuse"    : "skins/Caucasion_Male.jpg",
 "vertexColors" : false

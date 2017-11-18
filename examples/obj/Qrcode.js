@@ -1458,4 +1458,3 @@ var Qrcode = function () {
 }
 
 Qrcode.prototype = Object.create( THREE.Geometry.prototype );
-Qrcode.prototype.constructor = Qrcode;

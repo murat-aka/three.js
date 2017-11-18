@@ -1,32 +1,16 @@
-/**
- * @author mrdoob / http://mrdoob.com/
- */
+var Config = function () {
 
-var Config = function ( name ) {
+	var name = 'threejs-editor';
 
 	var storage = {
-		'autosave': true,
-		'theme': 'css/light.css',
-
-		'project/title': '',
-		'project/editable': false,
-
-		'project/renderer': 'WebGLRenderer',
-		'project/renderer/antialias': true,
-		'project/renderer/gammaInput': false,
-		'project/renderer/gammaOutput': false,
-		'project/renderer/shadows': true,
-
-		'project/vr': false,
-
-		'settings/history': false
+		theme: 'css/light.css',
+		camera: {
+			position: [ 500, 250, 500 ],
+			target: [ 0, 0, 0 ] 
+		}
 	};
 
-	if ( window.localStorage[ name ] === undefined ) {
-
-		window.localStorage[ name ] = JSON.stringify( storage );
-
-	} else {
+	if ( window.localStorage[ name ] !== undefined ) {
 
 		var data = JSON.parse( window.localStorage[ name ] );
 
@@ -46,13 +30,9 @@ var Config = function ( name ) {
 
 		},
 
-		setKey: function () { // key, value, key, value ...
+		setKey: function ( key, value ) {
 
-			for ( var i = 0, l = arguments.length; i < l; i += 2 ) {
-
-				storage[ arguments[ i ] ] = arguments[ i + 1 ];
-
-			}
+			storage[ key ] = value;
 
 			window.localStorage[ name ] = JSON.stringify( storage );
 
@@ -66,6 +46,6 @@ var Config = function ( name ) {
 
 		}
 
-	};
+	}
 
 };

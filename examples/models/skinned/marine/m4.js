@@ -21,6 +21,7 @@
 		"DbgIndex" : 0,
 		"DbgName" : "M4",
 		"blending" : "NormalBlending",
+		"colorAmbient" : [0.5351081581544648, 0.5351081581544648, 0.5351081581544648],
 		"colorDiffuse" : [0.5351081581544648, 0.5351081581544648, 0.5351081581544648],
 		"colorSpecular" : [1.0, 1.0, 1.0],
 		"depthTest" : true,
@@ -29,7 +30,7 @@
 		"mapDiffuseWrap" : ["repeat", "repeat"],
 		"shading" : "Lambert",
 		"specularCoef" : 34,
-		"opacity" : 1.0,
+		"transparency" : 1.0,
 		"transparent" : true,
 		"vertexColors" : false
 	}],

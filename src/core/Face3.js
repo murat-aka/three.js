@@ -1,63 +1,46 @@
-import { Color } from '../math/Color.js';
-import { Vector3 } from '../math/Vector3.js';
-
 /**
  * @author mrdoob / http://mrdoob.com/
  * @author alteredq / http://alteredqualia.com/
  */
 
-function Face3( a, b, c, normal, color, materialIndex ) {
+THREE.Face3 = function ( a, b, c, normal, color, materialIndex ) {
 
 	this.a = a;
 	this.b = b;
 	this.c = c;
 
-	this.normal = ( normal && normal.isVector3 ) ? normal : new Vector3();
-	this.vertexNormals = Array.isArray( normal ) ? normal : [];
+	this.normal = normal instanceof THREE.Vector3 ? normal : new THREE.Vector3();
+	this.vertexNormals = normal instanceof Array ? normal : [ ];
 
-	this.color = ( color && color.isColor ) ? color : new Color();
-	this.vertexColors = Array.isArray( color ) ? color : [];
+	this.color = color instanceof THREE.Color ? color : new THREE.Color();
+	this.vertexColors = color instanceof Array ? color : [];
+
+	this.vertexTangents = [];
 
 	this.materialIndex = materialIndex !== undefined ? materialIndex : 0;
 
-}
+};
 
-Object.assign( Face3.prototype, {
+THREE.Face3.prototype = {
+
+	constructor: THREE.Face3,
 
 	clone: function () {
 
-		return new this.constructor().copy( this );
+		var face = new THREE.Face3( this.a, this.b, this.c );
 
-	},
+		face.normal.copy( this.normal );
+		face.color.copy( this.color );
 
-	copy: function ( source ) {
+		face.materialIndex = this.materialIndex;
 
-		this.a = source.a;
-		this.b = source.b;
-		this.c = source.c;
+		var i, il;
+		for ( i = 0, il = this.vertexNormals.length; i < il; i ++ ) face.vertexNormals[ i ] = this.vertexNormals[ i ].clone();
+		for ( i = 0, il = this.vertexColors.length; i < il; i ++ ) face.vertexColors[ i ] = this.vertexColors[ i ].clone();
+		for ( i = 0, il = this.vertexTangents.length; i < il; i ++ ) face.vertexTangents[ i ] = this.vertexTangents[ i ].clone();
 
-		this.normal.copy( source.normal );
-		this.color.copy( source.color );
-
-		this.materialIndex = source.materialIndex;
-
-		for ( var i = 0, il = source.vertexNormals.length; i < il; i ++ ) {
-
-			this.vertexNormals[ i ] = source.vertexNormals[ i ].clone();
-
-		}
-
-		for ( var i = 0, il = source.vertexColors.length; i < il; i ++ ) {
-
-			this.vertexColors[ i ] = source.vertexColors[ i ].clone();
-
-		}
-
-		return this;
+		return face;
 
 	}
 
-} );
-
-
-export { Face3 };
+};

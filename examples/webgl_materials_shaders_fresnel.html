@@ -32,9 +32,9 @@
 
 	<body>
 
-		<div id="info"><a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - webgl cube Fresnel shader demo. texture by <a href="http://www.humus.name/index.php?page=Textures" target="_blank" rel="noopener">Humus</a> </div>
+		<div id="info"><a href="http://threejs.org" target="_blank">three.js</a> - webgl cube Fresnel shader demo. texture by <a href="http://www.humus.name/index.php?page=Textures" target="_blank">Humus</a> </div>
 
-		<script src="../build/three.js"></script>
+		<script src="../build/three.min.js"></script>
 
 		<script src="js/shaders/FresnelShader.js"></script>
 
@@ -47,6 +47,7 @@
 			var container;
 
 			var camera, scene, renderer;
+			var cameraCube, sceneCube;
 
 			var mesh, zmesh, lightMesh, geometry;
 			var spheres = [];
@@ -71,7 +72,13 @@
 				camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 100000 );
 				camera.position.z = 3200;
 
-				//
+				cameraCube = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 100000 );
+
+				scene = new THREE.Scene();
+				sceneCube = new THREE.Scene();
+
+
+				var geometry = new THREE.SphereGeometry( 100, 32, 16 );
 
 				var path = "textures/cube/Park2/";
 				var format = '.jpg';
@@ -81,26 +88,17 @@
 						path + 'posz' + format, path + 'negz' + format
 					];
 
-				var textureCube = new THREE.CubeTextureLoader().load( urls );
+
+				var textureCube = THREE.ImageUtils.loadTextureCube( urls );
 				textureCube.format = THREE.RGBFormat;
-
-				scene = new THREE.Scene();
-				scene.background = textureCube;
-
-				//
-
-				var geometry = new THREE.SphereGeometry( 100, 32, 16 );
 
 				var shader = THREE.FresnelShader;
 				var uniforms = THREE.UniformsUtils.clone( shader.uniforms );
 
 				uniforms[ "tCube" ].value = textureCube;
 
-				var material = new THREE.ShaderMaterial( {
-					uniforms: uniforms,
-					vertexShader: shader.vertexShader,
-					fragmentShader: shader.fragmentShader
-				} );
+				var parameters = { fragmentShader: shader.fragmentShader, vertexShader: shader.vertexShader, uniforms: uniforms };
+				var material = new THREE.ShaderMaterial( parameters );
 
 				for ( var i = 0; i < 500; i ++ ) {
 
@@ -120,11 +118,28 @@
 
 				scene.matrixAutoUpdate = false;
 
+				// Skybox
+
+				var shader = THREE.ShaderLib[ "cube" ];
+				shader.uniforms[ "tCube" ].value = textureCube;
+
+				var material = new THREE.ShaderMaterial( {
+
+					fragmentShader: shader.fragmentShader,
+					vertexShader: shader.vertexShader,
+					uniforms: shader.uniforms,
+					side: THREE.BackSide
+
+				} ),
+
+				mesh = new THREE.Mesh( new THREE.BoxGeometry( 100000, 100000, 100000 ), material );
+				sceneCube.add( mesh );
+
 				//
 
 				renderer = new THREE.WebGLRenderer( { antialias: false } );
-				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.autoClear = false;
 				container.appendChild( renderer.domElement );
 
 				//
@@ -140,6 +155,9 @@
 
 				camera.aspect = window.innerWidth / window.innerHeight;
 				camera.updateProjectionMatrix();
+
+				cameraCube.aspect = window.innerWidth / window.innerHeight;
+				cameraCube.updateProjectionMatrix();
 
 				renderer.setSize( window.innerWidth, window.innerHeight );
 
@@ -171,6 +189,8 @@
 
 				camera.lookAt( scene.position );
 
+				cameraCube.rotation.copy( camera.rotation );
+
 				for ( var i = 0, il = spheres.length; i < il; i ++ ) {
 
 					var sphere = spheres[ i ];
@@ -180,6 +200,8 @@
 
 				}
 
+				renderer.clear();
+				renderer.render( sceneCube, cameraCube );
 				renderer.render( scene, camera );
 
 			}

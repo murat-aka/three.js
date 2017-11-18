@@ -2,28 +2,22 @@
  * @author alteredq / http://alteredqualia.com/
  */
 
-import { Texture } from './Texture.js';
-import { NearestFilter } from '../constants.js';
+THREE.DataTexture = function ( data, width, height, format, type, mapping, wrapS, wrapT, magFilter, minFilter, anisotropy ) {
 
-function DataTexture( data, width, height, format, type, mapping, wrapS, wrapT, magFilter, minFilter, anisotropy, encoding ) {
-
-	Texture.call( this, null, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, encoding );
+	THREE.Texture.call( this, null, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy );
 
 	this.image = { data: data, width: width, height: height };
 
-	this.magFilter = magFilter !== undefined ? magFilter : NearestFilter;
-	this.minFilter = minFilter !== undefined ? minFilter : NearestFilter;
+};
 
-	this.generateMipmaps = false;
-	this.flipY = false;
-	this.unpackAlignment = 1;
+THREE.DataTexture.prototype = Object.create( THREE.Texture.prototype );
 
-}
+THREE.DataTexture.prototype.clone = function () {
 
-DataTexture.prototype = Object.create( Texture.prototype );
-DataTexture.prototype.constructor = DataTexture;
+	var texture = new THREE.DataTexture();
 
-DataTexture.prototype.isDataTexture = true;
+	THREE.Texture.prototype.clone.call( this, texture );
 
+	return texture;
 
-export { DataTexture };
+};

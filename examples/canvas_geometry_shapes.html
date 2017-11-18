@@ -23,13 +23,9 @@
 	<body>
 		<canvas id="debug" style="position:absolute; left:100px"></canvas>
 
-		<div id="info"><a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - shape geometry</div>
+		<div id="info"><a href="http://threejs.org" target="_blank">three.js</a> - shape geometry</div>
 
-		<script src="../build/three.js"></script>
-
-		<script src="js/renderers/Projector.js"></script>
-		<script src="js/renderers/CanvasRenderer.js"></script>
-
+		<script src="../build/three.min.js"></script>
 		<script src="js/libs/stats.min.js"></script>
 
 		<script>
@@ -61,9 +57,8 @@
 				camera.position.set( 0, 150, 500 );
 
 				scene = new THREE.Scene();
-				scene.background = new THREE.Color( 0xf0f0f0 );
 
-				group = new THREE.Group();
+				group = new THREE.Object3D();
 				group.position.y = 50;
 				scene.add( group );
 
@@ -82,9 +77,7 @@
 
 					// line
 
-					var points = shape.getPoints();
-					var geometry = new THREE.Geometry().setFromPoints( points );
-
+					var geometry = shape.createPointsGeometry();
 					var material = new THREE.LineBasicMaterial( { linewidth: 10, color: 0x333333, transparent: true } );
 
 					var line = new THREE.Line( geometry, material );
@@ -294,13 +287,15 @@
 				//
 
 				renderer = new THREE.CanvasRenderer();
-				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setClearColor( 0xf0f0f0 );
 				renderer.setSize( window.innerWidth, window.innerHeight );
 				renderer.sortElements = false;
 				container.appendChild( renderer.domElement );
 
 				stats = new Stats();
-				container.appendChild( stats.dom );
+				stats.domElement.style.position = 'absolute';
+				stats.domElement.style.top = '0px';
+				container.appendChild( stats.domElement );
 
 				document.addEventListener( 'mousedown', onDocumentMouseDown, false );
 				document.addEventListener( 'touchstart', onDocumentTouchStart, false );

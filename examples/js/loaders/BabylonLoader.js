@@ -1,6 +1,5 @@
 /**
  * @author mrdoob / http://mrdoob.com/
- * @author Mugen87 / https://github.com/Mugen87
  */
 
 THREE.BabylonLoader = function ( manager ) {
@@ -11,234 +10,207 @@ THREE.BabylonLoader = function ( manager ) {
 
 THREE.BabylonLoader.prototype = {
 
-	constructor: THREE.BabylonLoader,
+	constructor: THREE.ObjectLoader,
 
 	load: function ( url, onLoad, onProgress, onError ) {
 
 		var scope = this;
 
-		var loader = new THREE.FileLoader( scope.manager );
+		var loader = new THREE.XHRLoader( scope.manager );
+		loader.setCrossOrigin( this.crossOrigin );
 		loader.load( url, function ( text ) {
 
 			onLoad( scope.parse( JSON.parse( text ) ) );
 
-		}, onProgress, onError );
+		} );
+
+	},
+
+	setCrossOrigin: function ( value ) {
+
+		this.crossOrigin = value;
 
 	},
 
 	parse: function ( json ) {
 
-		function parseMaterials( json ) {
+		var materials = this.parseMaterials( json.materials );
+		var scene = this.parseObjects( json, materials );
 
-			var materials = {};
+		return scene;
 
-			for ( var i = 0, l = json.materials.length; i < l; i ++ ) {
+	},
 
-				var data = json.materials[ i ];
+	parseMaterials: function ( json ) {
 
-				var material = new THREE.MeshPhongMaterial();
-				material.name = data.name;
-				material.color.fromArray( data.diffuse );
-				material.emissive.fromArray( data.emissive );
-				material.specular.fromArray( data.specular );
-				material.shininess = data.specularPower;
-				material.opacity = data.alpha;
+		var materials = {};
 
-				materials[ data.id ] = material;
+		for ( var i = 0, l = json.length; i < l; i ++ ) {
 
-			}
+			var data = json[ i ];
 
-			if ( json.multiMaterials ) {
+			var material = new THREE.MeshPhongMaterial();
+			material.name = data.name;
+			material.ambient.fromArray( data.ambient );
+			material.color.fromArray( data.diffuse );
+			material.emissive.fromArray( data.emissive );
+			material.specular.fromArray( data.specular );
+			material.shininess = data.specularPower;
+			material.opacity = data.alpha;
 
-				for ( var i = 0, l = json.multiMaterials.length; i < l; i ++ ) {
-
-					var data = json.multiMaterials[ i ];
-
-					console.warn( 'THREE.BabylonLoader: Multi materials not yet supported.' );
-
-					materials[ data.id ] = new THREE.MeshPhongMaterial();
-
-				}
-
-			}
-
-			return materials;
+			materials[ data.id ] = material;
 
 		}
 
-		function parseGeometry( json ) {
+		return materials;
 
-			var geometry = new THREE.BufferGeometry();
+	},
 
-			var indices = json.indices;
-			var positions = json.positions;
-			var normals = json.normals;
-			var uvs = json.uvs;
+	parseObjects: function ( json, materials ) {
 
-			// indices
+		var objects = {};
+		var scene = new THREE.Scene();
 
-			geometry.setIndex( indices );
+		var lights = json.lights;
 
-			// positions
+		for ( var i = 0, l = lights.length; i < l; i ++ ) {
 
-			for ( var j = 2, jl = positions.length; j < jl; j += 3 ) {
+			var data = lights[ i ];
 
-				positions[ j ] = - positions[ j ];
+			var light;
 
+			switch ( data.type ) {
+
+				case 0:
+					light = new THREE.PointLight();
+					break;
+
+				case 1:
+					light = new THREE.DirectionalLight();
+					break;
+
+				case 2:
+					light = new THREE.SpotLight();
+					break;
+
+				case 3:
+					light = new THREE.HemisphereLight();
+					break;
 			}
 
-			geometry.addAttribute( 'position', new THREE.Float32BufferAttribute( positions, 3 ) );
+			light.name = data.name;
+			light.position.set( data.position[ 0 ], data.position[ 1 ], - data.position[ 2 ] );
+			light.color.fromArray( data.diffuse );
+			if ( data.intensity ) light.intensity = data.intensity;
 
-			// normals
+			objects[ data.id ] = light;
 
-			if ( normals ) {
+			scene.add( light );
+
+		}
+
+		var meshes = json.meshes;
+
+		for ( var i = 0, l = meshes.length; i < l; i ++ ) {
+
+			var data = meshes[ i ];
+
+			var object;
+
+			if ( data.indices !== null  ) {
+
+				var geometry = new THREE.BufferGeometry();
+
+				geometry.attributes.index = {
+					itemSize: 1,
+					array: new Uint16Array( data.indices )
+				};
+
+				geometry.attributes.position = {
+					itemSize: 3,
+					array: new Float32Array( data.positions )
+				};
+
+				var positions = geometry.attributes.position.array;
+
+				for ( var j = 2, jl = positions.length; j < jl; j += 3 ) {
+
+					positions[ j ] = - positions[ j ]; 
+
+				}
+
+				geometry.attributes.normal = {
+					itemSize: 3,
+					array: new Float32Array( data.normals )
+				};
+
+				var normals = geometry.attributes.normal.array;
 
 				for ( var j = 2, jl = normals.length; j < jl; j += 3 ) {
 
-					normals[ j ] = - normals[ j ];
+					normals[ j ] = - normals[ j ]; 
 
 				}
 
-				geometry.addAttribute( 'normal', new THREE.Float32BufferAttribute( normals, 3 ) );
+				geometry.attributes.uv = {
+					itemSize: 2,
+					array: new Float32Array( data.uvs )
+				};
 
-			}
+				var subMeshes = data.subMeshes;
 
-			// uvs
+				if ( subMeshes !== null ) {
 
-			if ( uvs ) {
+					for ( var j = 0, jl = subMeshes.length; j < jl; j ++ ) {
 
-				geometry.addAttribute( 'uv', new THREE.Float32BufferAttribute( uvs, 2 ) );
+						var subMesh = subMeshes[ j ];
 
-			}
+						geometry.offsets.push( {
+							start: subMesh.indexStart,
+							index: 0,
+							count: subMesh.indexCount
+						} );
 
-			// offsets
-
-			var subMeshes = json.subMeshes;
-
-			if ( subMeshes ) {
-
-				for ( var j = 0, jl = subMeshes.length; j < jl; j ++ ) {
-
-					var subMesh = subMeshes[ j ];
-
-					geometry.addGroup( subMesh.indexStart, subMesh.indexCount );
-
-				}
-
-			}
-
-			return geometry;
-
-		}
-
-		function parseObjects( json, materials ) {
-
-			var objects = {};
-			var scene = new THREE.Scene();
-
-			var cameras = json.cameras;
-
-			for ( var i = 0, l = cameras.length; i < l; i ++ ) {
-
-				var data = cameras[ i ];
-
-				var camera = new THREE.PerspectiveCamera( ( data.fov / Math.PI ) * 180, 1.33, data.minZ, data.maxZ );
-
-				camera.name = data.name;
-				camera.position.fromArray( data.position );
-				if ( data.rotation ) camera.rotation.fromArray( data.rotation );
-
-				objects[ data.id ] = camera;
-
-			}
-
-			var lights = json.lights;
-
-			for ( var i = 0, l = lights.length; i < l; i ++ ) {
-
-				var data = lights[ i ];
-
-				var light;
-
-				switch ( data.type ) {
-
-					case 0:
-						light = new THREE.PointLight();
-						break;
-
-					case 1:
-						light = new THREE.DirectionalLight();
-						break;
-
-					case 2:
-						light = new THREE.SpotLight();
-						break;
-
-					case 3:
-						light = new THREE.HemisphereLight();
-						break;
-
-				}
-
-				light.name = data.name;
-				if ( data.position ) light.position.set( data.position[ 0 ], data.position[ 1 ], - data.position[ 2 ] );
-				light.color.fromArray( data.diffuse );
-				if ( data.groundColor ) light.groundColor.fromArray( data.groundColor );
-				if ( data.intensity ) light.intensity = data.intensity;
-
-				objects[ data.id ] = light;
-
-				scene.add( light );
-
-			}
-
-			var meshes = json.meshes;
-
-			for ( var i = 0, l = meshes.length; i < l; i ++ ) {
-
-				var data = meshes[ i ];
-
-				var object;
-
-				if ( data.indices ) {
-
-					var geometry = parseGeometry( data );
-
-					object = new THREE.Mesh( geometry, materials[ data.materialId ] );
+					}
 
 				} else {
 
-					object = new THREE.Group();
+					geometry.offsets.push( {
+						start: 0,
+						index: 0,
+						count: data.indices.length
+					} );
 
 				}
 
-				object.name = data.name;
-				object.position.set( data.position[ 0 ], data.position[ 1 ], - data.position[ 2 ] );
-				object.rotation.fromArray( data.rotation );
-				if ( data.rotationQuaternion ) object.quaternion.fromArray( data.rotationQuaternion );
-				object.scale.fromArray( data.scaling );
-				// object.visible = data.isVisible;
+				var material = materials[ data.materialId ];
 
-				if ( data.parentId ) {
+				object = new THREE.Mesh( geometry, material );
 
-					objects[ data.parentId ].add( object );
+			} else {
 
-				} else {
-
-					scene.add( object );
-
-				}
-
-				objects[ data.id ] = object;
+				object = new THREE.Object3D();
 
 			}
 
-			return scene;
+			object.name = data.name;
+			object.position.set( data.position[ 0 ], data.position[ 1 ], - data.position[ 2 ] );
+			object.rotation.fromArray( data.rotation );
+			object.scale.fromArray( data.scaling );
+
+			if ( data.parentId !== undefined && data.parentId !== '' ) {
+
+				objects[ data.parentId ].add( object );
+
+			} else {
+
+				scene.add( object );
+
+			}
+
+			objects[ data.id ] = object;
 
 		}
-
-		var materials = parseMaterials( json );
-		var scene = parseObjects( json, materials );
 
 		return scene;
 

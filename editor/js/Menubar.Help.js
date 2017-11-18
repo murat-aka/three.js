@@ -1,45 +1,30 @@
-/**
- * @author mrdoob / http://mrdoob.com/
- */
-
 Menubar.Help = function ( editor ) {
 
-	var container = new UI.Panel();
-	container.setClass( 'menu' );
+	// event handlers
 
-	var title = new UI.Panel();
-	title.setClass( 'title' );
-	title.setTextContent( 'Help' );
-	container.add( title );
-
-	var options = new UI.Panel();
-	options.setClass( 'options' );
-	container.add( options );
-
-	// Source code
-
-	var option = new UI.Row();
-	option.setClass( 'option' );
-	option.setTextContent( 'Source code' );
-	option.onClick( function () {
+	function onSourcecodeOptionClick () {
 
 		window.open( 'https://github.com/mrdoob/three.js/tree/master/editor', '_blank' )
 
-	} );
-	options.add( option );
+	}
 
-	// About
-
-	var option = new UI.Row();
-	option.setClass( 'option' );
-	option.setTextContent( 'About' );
-	option.onClick( function () {
+	function onAboutOptionClick () {
 
 		window.open( 'http://threejs.org', '_blank' );
 
-	} );
-	options.add( option );
+	}
 
-	return container;
+	// configure menu contents
 
-};
+	var createOption = UI.MenubarHelper.createOption;
+	var createDivider = UI.MenubarHelper.createDivider;
+
+	var menuConfig = [
+		createOption( 'Source code', onSourcecodeOptionClick ),
+		createOption( 'About', onAboutOptionClick )
+	];
+
+	var optionsPanel = UI.MenubarHelper.createOptionsPanel( menuConfig );
+
+	return UI.MenubarHelper.createMenuContainer( 'Help', optionsPanel );
+}

@@ -1,75 +1,13 @@
-/**
- * @author mrdoob / http://mrdoob.com/
- */
-
 var UI = {};
 
-UI.Element = function ( dom ) {
-
-	this.dom = dom;
-
-};
+UI.Element = function () {};
 
 UI.Element.prototype = {
-
-	add: function () {
-
-		for ( var i = 0; i < arguments.length; i ++ ) {
-
-			var argument = arguments[ i ];
-
-			if ( argument instanceof UI.Element ) {
-
-				this.dom.appendChild( argument.dom );
-
-			} else {
-
-				console.error( 'UI.Element:', argument, 'is not an instance of UI.Element.' );
-
-			}
-
-		}
-
-		return this;
-
-	},
-
-	remove: function () {
-
-		for ( var i = 0; i < arguments.length; i ++ ) {
-
-			var argument = arguments[ i ];
-
-			if ( argument instanceof UI.Element ) {
-
-				this.dom.removeChild( argument.dom );
-
-			} else {
-
-				console.error( 'UI.Element:', argument, 'is not an instance of UI.Element.' );
-
-			}
-
-		}
-
-		return this;
-
-	},
-
-	clear: function () {
-
-		while ( this.dom.children.length ) {
-
-			this.dom.removeChild( this.dom.lastChild );
-
-		}
-
-	},
 
 	setId: function ( id ) {
 
 		this.dom.id = id;
-
+		
 		return this;
 
 	},
@@ -90,8 +28,6 @@ UI.Element.prototype = {
 
 		}
 
-		return this;
-
 	},
 
 	setDisabled: function ( value ) {
@@ -110,13 +46,13 @@ UI.Element.prototype = {
 
 	}
 
-};
+}
 
 // properties
 
 var properties = [ 'position', 'left', 'top', 'right', 'bottom', 'width', 'height', 'border', 'borderLeft',
 'borderTop', 'borderRight', 'borderBottom', 'borderColor', 'display', 'overflow', 'margin', 'marginLeft', 'marginTop', 'marginRight', 'marginBottom', 'padding', 'paddingLeft', 'paddingTop', 'paddingRight', 'paddingBottom', 'color',
-'background', 'backgroundColor', 'opacity', 'fontSize', 'fontWeight', 'textAlign', 'textDecoration', 'textTransform', 'cursor', 'zIndex' ];
+'backgroundColor', 'opacity', 'fontSize', 'fontWeight', 'textTransform', 'cursor' ];
 
 properties.forEach( function ( property ) {
 
@@ -125,7 +61,6 @@ properties.forEach( function ( property ) {
 	UI.Element.prototype[ method ] = function () {
 
 		this.setStyle( property, arguments );
-
 		return this;
 
 	};
@@ -134,7 +69,7 @@ properties.forEach( function ( property ) {
 
 // events
 
-var events = [ 'KeyUp', 'KeyDown', 'MouseOver', 'MouseOut', 'Click', 'DblClick', 'Change' ];
+var events = [ 'KeyUp', 'KeyDown', 'MouseOver', 'MouseOut', 'Click', 'Change' ];
 
 events.forEach( function ( event ) {
 
@@ -150,53 +85,6 @@ events.forEach( function ( event ) {
 
 } );
 
-// Span
-
-UI.Span = function () {
-
-	UI.Element.call( this );
-
-	this.dom = document.createElement( 'span' );
-
-	return this;
-
-};
-
-UI.Span.prototype = Object.create( UI.Element.prototype );
-UI.Span.prototype.constructor = UI.Span;
-
-// Div
-
-UI.Div = function () {
-
-	UI.Element.call( this );
-
-	this.dom = document.createElement( 'div' );
-
-	return this;
-
-};
-
-UI.Div.prototype = Object.create( UI.Element.prototype );
-UI.Div.prototype.constructor = UI.Div;
-
-// Row
-
-UI.Row = function () {
-
-	UI.Element.call( this );
-
-	var dom = document.createElement( 'div' );
-	dom.className = 'Row';
-
-	this.dom = dom;
-
-	return this;
-
-};
-
-UI.Row.prototype = Object.create( UI.Element.prototype );
-UI.Row.prototype.constructor = UI.Row;
 
 // Panel
 
@@ -210,11 +98,172 @@ UI.Panel = function () {
 	this.dom = dom;
 
 	return this;
-
 };
 
 UI.Panel.prototype = Object.create( UI.Element.prototype );
-UI.Panel.prototype.constructor = UI.Panel;
+
+UI.Panel.prototype.add = function () {
+
+	for ( var i = 0; i < arguments.length; i ++ ) {
+
+		this.dom.appendChild( arguments[ i ].dom );
+
+	}
+
+	return this;
+
+};
+
+
+UI.Panel.prototype.remove = function () {
+
+	for ( var i = 0; i < arguments.length; i ++ ) {
+
+		this.dom.removeChild( arguments[ i ].dom );
+
+	}
+
+	return this;
+
+};
+
+UI.Panel.prototype.clear = function () {
+
+	while ( this.dom.children.length ) {
+
+		this.dom.removeChild( this.dom.lastChild );
+
+	}
+
+};
+
+
+// Collapsible Panel
+
+UI.CollapsiblePanel = function () {
+
+	UI.Panel.call( this );
+
+	this.dom.className = 'Panel CollapsiblePanel';
+
+	this.button = document.createElement( 'div' );
+	this.button.className = 'CollapsiblePanelButton';
+	this.dom.appendChild( this.button );
+
+	var scope = this;
+	this.button.addEventListener( 'click', function ( event ) {
+
+		scope.toggle();
+
+	}, false );
+
+	this.content = document.createElement( 'div' );
+	this.content.className = 'CollapsibleContent';
+	this.dom.appendChild( this.content );
+
+	this.isCollapsed = false;
+
+	return this;
+
+};
+
+UI.CollapsiblePanel.prototype = Object.create( UI.Panel.prototype );
+
+UI.CollapsiblePanel.prototype.addStatic = function () {
+
+	for ( var i = 0; i < arguments.length; i ++ ) {
+
+		this.dom.insertBefore( arguments[ i ].dom, this.content );
+
+	}
+
+	return this;
+
+};
+
+UI.CollapsiblePanel.prototype.removeStatic = UI.Panel.prototype.remove;
+
+UI.CollapsiblePanel.prototype.clearStatic = function () {
+
+	this.dom.childNodes.forEach( function ( child ) {
+
+		if ( child !== this.content ) {
+
+			this.dom.removeChild( child );
+
+		}
+
+	});
+
+};
+
+UI.CollapsiblePanel.prototype.add = function () {
+
+	for ( var i = 0; i < arguments.length; i ++ ) {
+
+		this.content.appendChild( arguments[ i ].dom );
+
+	}
+
+	return this;
+
+};
+
+UI.CollapsiblePanel.prototype.remove = function () {
+
+	for ( var i = 0; i < arguments.length; i ++ ) {
+
+		this.content.removeChild( arguments[ i ].dom );
+
+	}
+
+	return this;
+
+};
+
+UI.CollapsiblePanel.prototype.clear = function () {
+
+	while ( this.content.children.length ) {
+
+		this.content.removeChild( this.content.lastChild );
+
+	}
+
+};
+
+UI.CollapsiblePanel.prototype.toggle = function() {
+
+	this.setCollapsed( !this.isCollapsed );
+
+};
+
+UI.CollapsiblePanel.prototype.collapse = function() {
+
+	this.setCollapsed( true );
+
+};
+
+UI.CollapsiblePanel.prototype.expand = function() {
+
+	this.setCollapsed( false );
+
+};
+
+UI.CollapsiblePanel.prototype.setCollapsed = function( setCollapsed ) {
+
+	if ( setCollapsed ) {
+
+		this.dom.classList.add('collapsed');
+
+	} else {
+
+		this.dom.classList.remove('collapsed');
+
+	}
+
+	this.isCollapsed = setCollapsed;
+
+};
 
 // Text
 
@@ -236,13 +285,6 @@ UI.Text = function ( text ) {
 };
 
 UI.Text.prototype = Object.create( UI.Element.prototype );
-UI.Text.prototype.constructor = UI.Text;
-
-UI.Text.prototype.getValue = function () {
-
-	return this.dom.textContent;
-
-};
 
 UI.Text.prototype.setValue = function ( value ) {
 
@@ -259,7 +301,7 @@ UI.Text.prototype.setValue = function ( value ) {
 
 // Input
 
-UI.Input = function ( text ) {
+UI.Input = function () {
 
 	UI.Element.call( this );
 
@@ -268,7 +310,7 @@ UI.Input = function ( text ) {
 	var dom = document.createElement( 'input' );
 	dom.className = 'Input';
 	dom.style.padding = '2px';
-	dom.style.border = '1px solid transparent';
+	dom.style.border = '1px solid #ccc';
 
 	dom.addEventListener( 'keydown', function ( event ) {
 
@@ -277,14 +319,12 @@ UI.Input = function ( text ) {
 	}, false );
 
 	this.dom = dom;
-	this.setValue( text );
 
 	return this;
 
 };
 
 UI.Input.prototype = Object.create( UI.Element.prototype );
-UI.Input.prototype.constructor = UI.Input;
 
 UI.Input.prototype.getValue = function () {
 
@@ -312,23 +352,11 @@ UI.TextArea = function () {
 	var dom = document.createElement( 'textarea' );
 	dom.className = 'TextArea';
 	dom.style.padding = '2px';
-	dom.spellcheck = false;
+	dom.style.border = '1px solid #ccc';
 
 	dom.addEventListener( 'keydown', function ( event ) {
 
 		event.stopPropagation();
-
-		if ( event.keyCode === 9 ) {
-
-			event.preventDefault();
-
-			var cursor = dom.selectionStart;
-
-			dom.value = dom.value.substring( 0, cursor ) + '\t' + dom.value.substring( cursor );
-			dom.selectionStart = cursor + 1;
-			dom.selectionEnd = dom.selectionStart;
-
-		}
 
 	}, false );
 
@@ -339,7 +367,6 @@ UI.TextArea = function () {
 };
 
 UI.TextArea.prototype = Object.create( UI.Element.prototype );
-UI.TextArea.prototype.constructor = UI.TextArea;
 
 UI.TextArea.prototype.getValue = function () {
 
@@ -366,7 +393,10 @@ UI.Select = function () {
 
 	var dom = document.createElement( 'select' );
 	dom.className = 'Select';
-	dom.style.padding = '2px';
+	dom.style.width = '64px';
+	dom.style.height = '16px';
+	dom.style.border = '0px';
+	dom.style.padding = '0px';
 
 	this.dom = dom;
 
@@ -375,7 +405,6 @@ UI.Select = function () {
 };
 
 UI.Select.prototype = Object.create( UI.Element.prototype );
-UI.Select.prototype.constructor = UI.Select;
 
 UI.Select.prototype.setMultiple = function ( boolean ) {
 
@@ -418,17 +447,163 @@ UI.Select.prototype.getValue = function () {
 
 UI.Select.prototype.setValue = function ( value ) {
 
-	value = String( value );
-
-	if ( this.dom.value !== value ) {
-
-		this.dom.value = value;
-
-	}
+	this.dom.value = value;
 
 	return this;
 
 };
+
+// FancySelect
+
+UI.FancySelect = function () {
+
+	UI.Element.call( this );
+
+	var scope = this;
+
+	var dom = document.createElement( 'div' );
+	dom.className = 'FancySelect';
+	dom.tabIndex = 0;	// keyup event is ignored without setting tabIndex
+
+	// Broadcast for object selection after arrow navigation
+	var changeEvent = document.createEvent('HTMLEvents');
+	changeEvent.initEvent( 'change', true, true );
+
+	// Prevent native scroll behavior
+	dom.addEventListener( 'keydown', function (event) {
+
+		switch ( event.keyCode ) {
+			case 38: // up
+			case 40: // down
+				event.preventDefault();
+				event.stopPropagation();
+				break;
+		}
+
+	}, false);
+
+	// Keybindings to support arrow navigation
+	dom.addEventListener( 'keyup', function (event) {
+
+		switch ( event.keyCode ) {
+			case 38: // up
+			case 40: // down
+				scope.selectedIndex += ( event.keyCode == 38 ) ? -1 : 1;
+
+				if ( scope.selectedIndex >= 0 && scope.selectedIndex < scope.options.length ) {
+
+					// Highlight selected dom elem and scroll parent if needed
+					scope.setValue( scope.options[ scope.selectedIndex ].value );
+
+					scope.dom.dispatchEvent( changeEvent );
+
+				}
+
+				break;
+		}
+
+	}, false);
+
+	this.dom = dom;
+
+	this.options = [];
+	this.selectedIndex = -1;
+	this.selectedValue = null;
+
+	return this;
+
+};
+
+UI.FancySelect.prototype = Object.create( UI.Element.prototype );
+
+UI.FancySelect.prototype.setOptions = function ( options ) {
+
+	var scope = this;
+
+	var changeEvent = document.createEvent( 'HTMLEvents' );
+	changeEvent.initEvent( 'change', true, true );
+
+	while ( scope.dom.children.length > 0 ) {
+
+		scope.dom.removeChild( scope.dom.firstChild );
+
+	}
+
+	scope.options = [];
+
+	for ( var i = 0; i < options.length; i ++ ) {
+
+		var option = options[ i ];
+
+		var div = document.createElement( 'div' );
+		div.className = 'option';
+		div.innerHTML = option.html;
+		div.value = option.value;
+		scope.dom.appendChild( div );
+
+		scope.options.push( div );
+
+		div.addEventListener( 'click', function ( event ) {
+
+			scope.setValue( this.value );
+			scope.dom.dispatchEvent( changeEvent );
+
+		}, false );
+
+	}
+
+	return scope;
+
+};
+
+UI.FancySelect.prototype.getValue = function () {
+
+	return this.selectedValue;
+
+};
+
+UI.FancySelect.prototype.setValue = function ( value ) {
+
+	for ( var i = 0; i < this.options.length; i ++ ) {
+
+		var element = this.options[ i ];
+
+		if ( element.value === value ) {
+
+			element.classList.add( 'active' );
+
+			// scroll into view
+
+			var y = element.offsetTop - this.dom.offsetTop;
+			var bottomY = y + element.offsetHeight;
+			var minScroll = bottomY - this.dom.offsetHeight;
+
+			if ( this.dom.scrollTop > y ) {
+
+				this.dom.scrollTop = y
+
+			} else if ( this.dom.scrollTop < minScroll ) {
+
+				this.dom.scrollTop = minScroll;
+
+			}
+
+			this.selectedIndex = i;
+
+		} else {
+
+			element.classList.remove( 'active' );
+
+		}
+
+	}
+
+	this.selectedValue = value;
+
+	return this;
+
+};
+
 
 // Checkbox
 
@@ -450,7 +625,6 @@ UI.Checkbox = function ( boolean ) {
 };
 
 UI.Checkbox.prototype = Object.create( UI.Element.prototype );
-UI.Checkbox.prototype.constructor = UI.Checkbox;
 
 UI.Checkbox.prototype.getValue = function () {
 
@@ -482,9 +656,9 @@ UI.Color = function () {
 	var dom = document.createElement( 'input' );
 	dom.className = 'Color';
 	dom.style.width = '64px';
-	dom.style.height = '17px';
+	dom.style.height = '16px';
 	dom.style.border = '0px';
-	dom.style.padding = '2px';
+	dom.style.padding = '0px';
 	dom.style.backgroundColor = 'transparent';
 
 	try {
@@ -501,7 +675,6 @@ UI.Color = function () {
 };
 
 UI.Color.prototype = Object.create( UI.Element.prototype );
-UI.Color.prototype.constructor = UI.Color;
 
 UI.Color.prototype.getValue = function () {
 
@@ -525,7 +698,7 @@ UI.Color.prototype.setValue = function ( value ) {
 
 UI.Color.prototype.setHexValue = function ( hex ) {
 
-	this.dom.value = '#' + ( '000000' + hex.toString( 16 ) ).slice( - 6 );
+	this.dom.value = "#" + ( '000000' + hex.toString( 16 ) ).slice( -6 );
 
 	return this;
 
@@ -552,17 +725,13 @@ UI.Number = function ( number ) {
 
 	}, false );
 
-	this.value = 0;
-
 	this.min = - Infinity;
 	this.max = Infinity;
 
 	this.precision = 2;
 	this.step = 1;
-	this.unit = '';
 
 	this.dom = dom;
-
 	this.setValue( number );
 
 	var changeEvent = document.createEvent( 'HTMLEvents' );
@@ -571,47 +740,43 @@ UI.Number = function ( number ) {
 	var distance = 0;
 	var onMouseDownValue = 0;
 
-	var pointer = [ 0, 0 ];
-	var prevPointer = [ 0, 0 ];
+	var pointer = new THREE.Vector2();
+	var prevPointer = new THREE.Vector2();
 
-	function onMouseDown( event ) {
+	var onMouseDown = function ( event ) {
 
 		event.preventDefault();
 
 		distance = 0;
 
-		onMouseDownValue = scope.value;
+		onMouseDownValue = parseFloat( dom.value );
 
-		prevPointer = [ event.clientX, event.clientY ];
+		prevPointer.set( event.clientX, event.clientY );
 
 		document.addEventListener( 'mousemove', onMouseMove, false );
 		document.addEventListener( 'mouseup', onMouseUp, false );
 
-	}
+	};
 
-	function onMouseMove( event ) {
+	var onMouseMove = function ( event ) {
 
-		var currentValue = scope.value;
+		var currentValue = dom.value;
 
-		pointer = [ event.clientX, event.clientY ];
+		pointer.set( event.clientX, event.clientY );
 
-		distance += ( pointer[ 0 ] - prevPointer[ 0 ] ) - ( pointer[ 1 ] - prevPointer[ 1 ] );
+		distance += ( pointer.x - prevPointer.x ) - ( pointer.y - prevPointer.y );
 
-		var value = onMouseDownValue + ( distance / ( event.shiftKey ? 5 : 50 ) ) * scope.step;
-		value = Math.min( scope.max, Math.max( scope.min, value ) );
+		var number = onMouseDownValue + ( distance / ( event.shiftKey ? 5 : 50 ) ) * scope.step;
 
-		if ( currentValue !== value ) {
+		dom.value = Math.min( scope.max, Math.max( scope.min, number ) ).toFixed( scope.precision );
 
-			scope.setValue( value );
-			dom.dispatchEvent( changeEvent );
+		if ( currentValue !== dom.value ) dom.dispatchEvent( changeEvent );
 
-		}
+		prevPointer.set( event.clientX, event.clientY );
 
-		prevPointer = [ event.clientX, event.clientY ];
+	};
 
-	}
-
-	function onMouseUp( event ) {
+	var onMouseUp = function ( event ) {
 
 		document.removeEventListener( 'mousemove', onMouseMove, false );
 		document.removeEventListener( 'mouseup', onMouseUp, false );
@@ -623,29 +788,31 @@ UI.Number = function ( number ) {
 
 		}
 
-	}
+	};
 
-	function onChange( event ) {
+	var onChange = function ( event ) {
 
-		scope.setValue( dom.value );
+		var number = parseFloat( dom.value );
 
-	}
+		dom.value = isNaN( number ) === false ? number : 0;
 
-	function onFocus( event ) {
+	};
+
+	var onFocus = function ( event ) {
 
 		dom.style.backgroundColor = '';
+		dom.style.borderColor = '#ccc';
 		dom.style.cursor = '';
 
-	}
+	};
 
-	function onBlur( event ) {
+	var onBlur = function ( event ) {
 
 		dom.style.backgroundColor = 'transparent';
+		dom.style.borderColor = 'transparent';
 		dom.style.cursor = 'col-resize';
 
-	}
-
-	onBlur();
+	};
 
 	dom.addEventListener( 'mousedown', onMouseDown, false );
 	dom.addEventListener( 'change', onChange, false );
@@ -657,11 +824,10 @@ UI.Number = function ( number ) {
 };
 
 UI.Number.prototype = Object.create( UI.Element.prototype );
-UI.Number.prototype.constructor = UI.Number;
 
 UI.Number.prototype.getValue = function () {
 
-	return this.value;
+	return parseFloat( this.dom.value );
 
 };
 
@@ -669,33 +835,9 @@ UI.Number.prototype.setValue = function ( value ) {
 
 	if ( value !== undefined ) {
 
-		value = parseFloat( value );
-
-		if ( value < this.min ) value = this.min;
-		if ( value > this.max ) value = this.max;
-
-		this.value = value;
 		this.dom.value = value.toFixed( this.precision );
 
-		if ( this.unit !== '' ) this.dom.value += ' ' + this.unit;
-
 	}
-
-	return this;
-
-};
-
-UI.Number.prototype.setPrecision = function ( precision ) {
-
-	this.precision = precision;
-
-	return this;
-
-};
-
-UI.Number.prototype.setStep = function ( step ) {
-
-	this.step = step;
 
 	return this;
 
@@ -710,13 +852,14 @@ UI.Number.prototype.setRange = function ( min, max ) {
 
 };
 
-UI.Number.prototype.setUnit = function ( unit ) {
+UI.Number.prototype.setPrecision = function ( precision ) {
 
-	this.unit = unit;
+	this.precision = precision;
 
 	return this;
 
 };
+
 
 // Integer
 
@@ -728,7 +871,7 @@ UI.Integer = function ( number ) {
 
 	var dom = document.createElement( 'input' );
 	dom.className = 'Number';
-	dom.value = '0';
+	dom.value = '0.00';
 
 	dom.addEventListener( 'keydown', function ( event ) {
 
@@ -736,15 +879,12 @@ UI.Integer = function ( number ) {
 
 	}, false );
 
-	this.value = 0;
-
 	this.min = - Infinity;
 	this.max = Infinity;
 
 	this.step = 1;
 
 	this.dom = dom;
-
 	this.setValue( number );
 
 	var changeEvent = document.createEvent( 'HTMLEvents' );
@@ -753,47 +893,43 @@ UI.Integer = function ( number ) {
 	var distance = 0;
 	var onMouseDownValue = 0;
 
-	var pointer = [ 0, 0 ];
-	var prevPointer = [ 0, 0 ];
+	var pointer = new THREE.Vector2();
+	var prevPointer = new THREE.Vector2();
 
-	function onMouseDown( event ) {
+	var onMouseDown = function ( event ) {
 
 		event.preventDefault();
 
 		distance = 0;
 
-		onMouseDownValue = scope.value;
+		onMouseDownValue = parseFloat( dom.value );
 
-		prevPointer = [ event.clientX, event.clientY ];
+		prevPointer.set( event.clientX, event.clientY );
 
 		document.addEventListener( 'mousemove', onMouseMove, false );
 		document.addEventListener( 'mouseup', onMouseUp, false );
 
-	}
+	};
 
-	function onMouseMove( event ) {
+	var onMouseMove = function ( event ) {
 
-		var currentValue = scope.value;
+		var currentValue = dom.value;
 
-		pointer = [ event.clientX, event.clientY ];
+		pointer.set( event.clientX, event.clientY );
 
-		distance += ( pointer[ 0 ] - prevPointer[ 0 ] ) - ( pointer[ 1 ] - prevPointer[ 1 ] );
+		distance += ( pointer.x - prevPointer.x ) - ( pointer.y - prevPointer.y );
 
-		var value = onMouseDownValue + ( distance / ( event.shiftKey ? 5 : 50 ) ) * scope.step;
-		value = Math.min( scope.max, Math.max( scope.min, value ) ) | 0;
+		var number = onMouseDownValue + ( distance / ( event.shiftKey ? 5 : 50 ) ) * scope.step;
 
-		if ( currentValue !== value ) {
+		dom.value = Math.min( scope.max, Math.max( scope.min, number ) ) | 0;
 
-			scope.setValue( value );
-			dom.dispatchEvent( changeEvent );
+		if ( currentValue !== dom.value ) dom.dispatchEvent( changeEvent );
 
-		}
+		prevPointer.set( event.clientX, event.clientY );
 
-		prevPointer = [ event.clientX, event.clientY ];
+	};
 
-	}
-
-	function onMouseUp( event ) {
+	var onMouseUp = function ( event ) {
 
 		document.removeEventListener( 'mousemove', onMouseMove, false );
 		document.removeEventListener( 'mouseup', onMouseUp, false );
@@ -805,29 +941,35 @@ UI.Integer = function ( number ) {
 
 		}
 
-	}
+	};
 
-	function onChange( event ) {
+	var onChange = function ( event ) {
 
-		scope.setValue( dom.value );
+		var number = parseInt( dom.value );
 
-	}
+		if ( isNaN( number ) === false ) {
 
-	function onFocus( event ) {
+			dom.value = number;
+
+		}
+
+	};
+
+	var onFocus = function ( event ) {
 
 		dom.style.backgroundColor = '';
+		dom.style.borderColor = '#ccc';
 		dom.style.cursor = '';
 
-	}
+	};
 
-	function onBlur( event ) {
+	var onBlur = function ( event ) {
 
 		dom.style.backgroundColor = 'transparent';
+		dom.style.borderColor = 'transparent';
 		dom.style.cursor = 'col-resize';
 
-	}
-
-	onBlur();
+	};
 
 	dom.addEventListener( 'mousedown', onMouseDown, false );
 	dom.addEventListener( 'change', onChange, false );
@@ -839,11 +981,10 @@ UI.Integer = function ( number ) {
 };
 
 UI.Integer.prototype = Object.create( UI.Element.prototype );
-UI.Integer.prototype.constructor = UI.Integer;
 
 UI.Integer.prototype.getValue = function () {
 
-	return this.value;
+	return parseInt( this.dom.value );
 
 };
 
@@ -851,21 +992,10 @@ UI.Integer.prototype.setValue = function ( value ) {
 
 	if ( value !== undefined ) {
 
-		value = parseInt( value );
-
-		this.value = value;
-		this.dom.value = value;
+		this.dom.value = value | 0;
 
 	}
 
-	return this;
-
-};
-
-UI.Integer.prototype.setStep = function ( step ) {
-	
-	this.step = parseInt( step ); 
-	
 	return this;
 
 };
@@ -896,7 +1026,6 @@ UI.Break = function () {
 };
 
 UI.Break.prototype = Object.create( UI.Element.prototype );
-UI.Break.prototype.constructor = UI.Break;
 
 
 // HorizontalRule
@@ -915,7 +1044,6 @@ UI.HorizontalRule = function () {
 };
 
 UI.HorizontalRule.prototype = Object.create( UI.Element.prototype );
-UI.HorizontalRule.prototype.constructor = UI.HorizontalRule;
 
 
 // Button
@@ -923,6 +1051,8 @@ UI.HorizontalRule.prototype.constructor = UI.HorizontalRule;
 UI.Button = function ( value ) {
 
 	UI.Element.call( this );
+
+	var scope = this;
 
 	var dom = document.createElement( 'button' );
 	dom.className = 'Button';
@@ -935,69 +1065,10 @@ UI.Button = function ( value ) {
 };
 
 UI.Button.prototype = Object.create( UI.Element.prototype );
-UI.Button.prototype.constructor = UI.Button;
 
 UI.Button.prototype.setLabel = function ( value ) {
 
 	this.dom.textContent = value;
-
-	return this;
-
-};
-
-
-// Modal
-
-UI.Modal = function ( value ) {
-
-	var scope = this;
-
-	var dom = document.createElement( 'div' );
-
-	dom.style.position = 'absolute';
-	dom.style.width = '100%';
-	dom.style.height = '100%';
-	dom.style.backgroundColor = 'rgba(0,0,0,0.5)';
-	dom.style.display = 'none';
-	dom.style.alignItems = 'center';
-	dom.style.justifyContent = 'center';
-	dom.addEventListener( 'click', function ( event ) {
-
-		scope.hide();
-
-	} );
-
-	this.dom = dom;
-
-	this.container = new UI.Panel();
-	this.container.dom.style.width = '200px';
-	this.container.dom.style.padding = '20px';
-	this.container.dom.style.backgroundColor = '#ffffff';
-	this.container.dom.style.boxShadow = '0px 5px 10px rgba(0,0,0,0.5)';
-
-	this.add( this.container );
-
-	return this;
-
-};
-
-UI.Modal.prototype = Object.create( UI.Element.prototype );
-UI.Modal.prototype.constructor = UI.Modal;
-
-UI.Modal.prototype.show = function ( content ) {
-
-	this.container.clear();
-	this.container.add( content );
-
-	this.dom.style.display = 'flex';
-
-	return this;
-
-};
-
-UI.Modal.prototype.hide = function () {
-
-	this.dom.style.display = 'none';
 
 	return this;
 

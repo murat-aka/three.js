@@ -1,26 +1,21 @@
-import { Light } from './Light.js';
-
 /**
  * @author mrdoob / http://mrdoob.com/
  */
 
-function AmbientLight( color, intensity ) {
+THREE.AmbientLight = function ( color ) {
 
-	Light.call( this, color, intensity );
+	THREE.Light.call( this, color );
 
-	this.type = 'AmbientLight';
+};
 
-	this.castShadow = undefined;
+THREE.AmbientLight.prototype = Object.create( THREE.Light.prototype );
 
-}
+THREE.AmbientLight.prototype.clone = function () {
 
-AmbientLight.prototype = Object.assign( Object.create( Light.prototype ), {
+	var light = new THREE.AmbientLight();
 
-	constructor: AmbientLight,
+	THREE.Light.prototype.clone.call( this, light );
 
-	isAmbientLight: true
+	return light;
 
-} );
-
-
-export { AmbientLight };
+};

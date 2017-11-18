@@ -14,13 +14,10 @@
 	</head>
 	<body>
 
-		<script src="../build/three.js"></script>
+		<script src="../build/three.min.js"></script>
 
-		<script src="js/renderers/Projector.js"></script>
-		<script src="js/renderers/CanvasRenderer.js"></script>
 		<script src="js/renderers/SVGRenderer.js"></script>
 		<script src="js/renderers/SoftwareRenderer.js"></script>
-
 		<script src="js/libs/stats.min.js"></script>
 
 		<script src="obj/Qrcode.js"></script>
@@ -49,7 +46,6 @@
 
 				scene = new THREE.Scene();
 				scene.autoUpdate = false;
-				scene.background = new THREE.Color( 0xf0f0f0 );
 
 				// QRCODE
 
@@ -78,7 +74,7 @@
 
 				// PLANE
 
-				mesh = new THREE.Mesh( new THREE.PlaneBufferGeometry( 100, 100 ), new THREE.MeshBasicMaterial( { color: Math.random() * 0xffffff, side: THREE.DoubleSide } ) );
+				mesh = new THREE.Mesh( new THREE.PlaneGeometry( 100, 100 ), new THREE.MeshBasicMaterial( { color: Math.random() * 0xffffff, side: THREE.DoubleSide } ) );
 				mesh.position.y = -500;
 				mesh.scale.x = mesh.scale.y = mesh.scale.z = 2;
 				scene.add( mesh );
@@ -146,24 +142,19 @@
 
 				// SPRITES
 
-				var textureLoader = new THREE.TextureLoader();
+				var texture = THREE.ImageUtils.loadTexture( 'textures/sprite.png' );
+				var material = new THREE.SpriteMaterial( { map: texture } );
 
-				textureLoader.load( 'textures/sprite.png', function ( texture ) {
+				for ( var i = 0; i < 50; i ++ ) {
 
-					var material = new THREE.SpriteMaterial( { map: texture, transparent: true } );
+					var sprite = new THREE.Sprite( material );
+					sprite.position.x = Math.random() * 1000 - 500;
+					sprite.position.y = Math.random() * 1000 - 500;
+					sprite.position.z = Math.random() * 1000 - 500;
+					sprite.scale.set( 64, 64, 1 );
+					scene.add( sprite );
 
-					for ( var i = 0; i < 50; i ++ ) {
-
-						var sprite = new THREE.Sprite( material );
-						sprite.position.x = Math.random() * 1000 - 500;
-						sprite.position.y = Math.random() * 1000 - 500;
-						sprite.position.z = Math.random() * 1000 - 500;
-						sprite.scale.set( 64, 64, 1 );
-						scene.add( sprite );
-
-					}
-
-				} );
+				}
 
 				for ( var i = 0; i < 50; i ++ ) {
 
@@ -187,26 +178,30 @@
 				scene.add( directional );
 
 				canvasRenderer = new THREE.CanvasRenderer();
-				canvasRenderer.setPixelRatio( window.devicePixelRatio );
+				canvasRenderer.setClearColor( 0xf0f0f0 );
 				canvasRenderer.setSize( width, height );
 				document.body.appendChild( canvasRenderer.domElement );
 
 				svgRenderer = new THREE.SVGRenderer();
+				svgRenderer.setClearColor( 0xf0f0f0 );
 				svgRenderer.setSize( width, height );
 				svgRenderer.setQuality( 'low' );
 				document.body.appendChild( svgRenderer.domElement );
 
 				softwareRenderer = new THREE.SoftwareRenderer();
+				softwareRenderer.setClearColor( 0xf0f0f0 );
 				softwareRenderer.setSize( width, height );
 				document.body.appendChild( softwareRenderer.domElement );
 
 				webglRenderer = new THREE.WebGLRenderer( { antialias: true } );
-				webglRenderer.setPixelRatio( window.devicePixelRatio );
+				webglRenderer.setClearColor( 0xf0f0f0 );
 				webglRenderer.setSize( width, height );
 				document.body.appendChild( webglRenderer.domElement );
 
 				stats = new Stats();
-				document.body.appendChild( stats.dom );
+				stats.domElement.style.position = 'absolute';
+				stats.domElement.style.top = '0px';
+				document.body.appendChild( stats.domElement );
 
 				//
 

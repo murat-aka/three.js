@@ -1286,12 +1286,12 @@ rollout ThreeJSExporter "ThreeJSExporter"
 			
 			root_keys = #(#(0, p, r, s))
 			
-			slidertime = animationrange.start
+			slidertime = 0
 			
 			while (slidertime < animationrange.end) do
 			(
 				slidertime += 1
-				sTime = ((slidertime - animationrange.start) / FPS) as String
+				sTime = (slidertime / FPS) as String
 				
 				append root_keys #(substring sTime 1 (sTime.count - 1), p, r, s)
 			)
@@ -1303,7 +1303,6 @@ rollout ThreeJSExporter "ThreeJSExporter"
 			
 			max modify mode
 			
-			modPanel.setCurrentObject node.modifiers[#skin]
 			total_bones = skinops.getnumberbones node.modifiers[#skin]
 			
 			vertex_count = getNumverts node
@@ -1318,7 +1317,7 @@ rollout ThreeJSExporter "ThreeJSExporter"
 			
 			for i = 1 to total_bones do
 			(
-				slidertime = animationrange.start
+				slidertime = 0
 				
 				bone_name = skinops.getbonename node.modifiers[#skin] i 0
 				bone_node = getNodeByName bone_name
@@ -1344,7 +1343,7 @@ rollout ThreeJSExporter "ThreeJSExporter"
 				while (slidertime < animationrange.end) do
 				(
 					slidertime += 1
-					sTime = ((slidertime - animationrange.start) / FPS) as String
+					sTime = (slidertime / FPS) as String
 					
 					localForm = bone_node.transform
 					localForm = thinkLocally bone_node localForm
@@ -1527,7 +1526,6 @@ rollout ThreeJSExporter "ThreeJSExporter"
 
 	function ExportScene =
 	(
-		slidertime = animationrange.start
 
 		-- Extract meshes
 

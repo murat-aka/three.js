@@ -2,9 +2,20 @@
  * https://github.com/mrdoob/eventdispatcher.js/
  */
 
-function EventDispatcher() {}
+THREE.EventDispatcher = function () {}
 
-Object.assign( EventDispatcher.prototype, {
+THREE.EventDispatcher.prototype = {
+
+	constructor: THREE.EventDispatcher,
+
+	apply: function ( object ) {
+
+		object.addEventListener = THREE.EventDispatcher.prototype.addEventListener;
+		object.hasEventListener = THREE.EventDispatcher.prototype.hasEventListener;
+		object.removeEventListener = THREE.EventDispatcher.prototype.removeEventListener;
+		object.dispatchEvent = THREE.EventDispatcher.prototype.dispatchEvent;
+
+	},
 
 	addEventListener: function ( type, listener ) {
 
@@ -32,7 +43,13 @@ Object.assign( EventDispatcher.prototype, {
 
 		var listeners = this._listeners;
 
-		return listeners[ type ] !== undefined && listeners[ type ].indexOf( listener ) !== - 1;
+		if ( listeners[ type ] !== undefined && listeners[ type ].indexOf( listener ) !== - 1 ) {
+
+			return true;
+
+		}
+
+		return false;
 
 	},
 
@@ -58,7 +75,7 @@ Object.assign( EventDispatcher.prototype, {
 	},
 
 	dispatchEvent: function ( event ) {
-
+			
 		if ( this._listeners === undefined ) return;
 
 		var listeners = this._listeners;
@@ -68,9 +85,16 @@ Object.assign( EventDispatcher.prototype, {
 
 			event.target = this;
 
-			var array = listenerArray.slice( 0 );
+			var array = [];
+			var length = listenerArray.length;
 
-			for ( var i = 0, l = array.length; i < l; i ++ ) {
+			for ( var i = 0; i < length; i ++ ) {
+
+				array[ i ] = listenerArray[ i ];
+
+			}
+
+			for ( var i = 0; i < length; i ++ ) {
 
 				array[ i ].call( this, event );
 
@@ -80,7 +104,4 @@ Object.assign( EventDispatcher.prototype, {
 
 	}
 
-} );
-
-
-export { EventDispatcher };
+};

@@ -32,9 +32,9 @@
 	<body>
 
 		<div id="container"><br /><br /><br /><br /><br />Generating world...</div>
-		<div id="info"><a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - webgl terrain raycasting demo</div>
+		<div id="info"><a href="http://threejs.org" target="_blank">three.js</a> - webgl terrain raycasting demo</div>
 
-		<script src="../build/three.js"></script>
+		<script src="../build/three.min.js"></script>
 
 		<script src="js/controls/OrbitControls.js"></script>
 
@@ -62,10 +62,8 @@
 
 			var clock = new THREE.Clock();
 
+			var shouldSphereFollowMouse = true;
 			var helper;
-
-			var raycaster = new THREE.Raycaster();
-			var mouse = new THREE.Vector2();
 
 			init();
 			animate();
@@ -77,46 +75,42 @@
 				camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 20000 );
 
 				scene = new THREE.Scene();
-				scene.background = new THREE.Color( 0xbfd1e5 );
 
 				controls = new THREE.OrbitControls(camera);
-				controls.target.set( 0.0, 100.0, 0.0 );
+				controls.center.set(0.0, 100.0, 0.0);
 				controls.userPanSpeed = 100;
 
-				var data = generateHeight( worldWidth, worldDepth );
+				data = generateHeight( worldWidth, worldDepth );
 
-				controls.target.y = data[ worldHalfWidth + worldHalfDepth * worldWidth ] + 500;
-				camera.position.y =  controls.target.y + 2000;
+				controls.center.y = data[ worldHalfWidth + worldHalfDepth * worldWidth ] + 500;
+				camera.position.y =  controls.center.y + 2000;
 				camera.position.x = 2000;
 
-				var geometry = new THREE.PlaneBufferGeometry( 7500, 7500, worldWidth - 1, worldDepth - 1 );
-				geometry.rotateX( - Math.PI / 2 );
+				var geometry = new THREE.PlaneGeometry( 7500, 7500, worldWidth - 1, worldDepth - 1 );
+				geometry.applyMatrix( new THREE.Matrix4().makeRotationX( - Math.PI / 2 ) );
 
-				var vertices = geometry.attributes.position.array;
+				for ( var i = 0, l = geometry.vertices.length; i < l; i ++ ) {
 
-				for ( var i = 0, j = 0, l = vertices.length; i < l; i ++, j += 3 ) {
-
-					vertices[ j + 1 ] = data[ i ] * 10;
+					geometry.vertices[ i ].y = data[ i ] * 10;
 
 				}
 
 				geometry.computeFaceNormals();
 
-				texture = new THREE.CanvasTexture( generateTexture( data, worldWidth, worldDepth ) );
-				texture.wrapS = THREE.ClampToEdgeWrapping;
-				texture.wrapT = THREE.ClampToEdgeWrapping;
+				texture = new THREE.Texture( generateTexture( data, worldWidth, worldDepth ), new THREE.UVMapping(), THREE.ClampToEdgeWrapping, THREE.ClampToEdgeWrapping );
+				texture.needsUpdate = true;
 
 				mesh = new THREE.Mesh( geometry, new THREE.MeshBasicMaterial( { map: texture } ) );
 				scene.add( mesh );
 
 				var geometry = new THREE.CylinderGeometry( 0, 20, 100, 3 );
-				geometry.translate( 0, 50, 0 );
-				geometry.rotateX( Math.PI / 2 );
+				geometry.applyMatrix( new THREE.Matrix4().makeTranslation( 0, 50, 0 ) );
+				geometry.applyMatrix( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) );
 				helper = new THREE.Mesh( geometry, new THREE.MeshNormalMaterial() );
 				scene.add( helper );
 
 				renderer = new THREE.WebGLRenderer();
-				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setClearColor( 0xbfd1e5 );
 				renderer.setSize( window.innerWidth, window.innerHeight );
 
 				container.innerHTML = "";
@@ -125,7 +119,9 @@
 				container.addEventListener( 'mousemove', onMouseMove, false );
 
 				stats = new Stats();
-				container.appendChild( stats.dom );
+				stats.domElement.style.position = 'absolute';
+				stats.domElement.style.top = '0px';
+				container.appendChild( stats.domElement );
 
 				//
 
@@ -139,6 +135,8 @@
 				camera.updateProjectionMatrix();
 
 				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				controls.handleResize();
 
 			}
 
@@ -243,30 +241,40 @@
 
 			function render() {
 
-				controls.update();
+				controls.update( clock.getDelta() );
 				renderer.render( scene, camera );
 
 			}
 
 			function onMouseMove( event ) {
 
-				mouse.x = ( event.clientX / renderer.domElement.clientWidth ) * 2 - 1;
-				mouse.y = - ( event.clientY / renderer.domElement.clientHeight ) * 2 + 1;
-				raycaster.setFromCamera( mouse, camera );
+				if ( shouldSphereFollowMouse ) {
 
-				// See if the ray from the camera into the world hits one of our meshes
-				var intersects = raycaster.intersectObject( mesh );
+					var mouseX = ( event.clientX / window.innerWidth ) * 2 - 1;
+					var mouseY = -( event.clientY / window.innerHeight ) * 2 + 1;
 
-				// Toggle rotation bool for meshes that we clicked
-				if ( intersects.length > 0 ) {
+					var vector = new THREE.Vector3( mouseX, mouseY, camera.near );
 
-					helper.position.set( 0, 0, 0 );
-					helper.lookAt( intersects[ 0 ].face.normal );
+					// Convert the [-1, 1] screen coordinate into a world coordinate on the near plane
+					var projector = new THREE.Projector();
+					projector.unprojectVector( vector, camera );
 
-					helper.position.copy( intersects[ 0 ].point );
+					var raycaster = new THREE.Raycaster( camera.position, vector.sub( camera.position ).normalize() );
 
+					// See if the ray from the camera into the world hits one of our meshes
+					var intersects = raycaster.intersectObject( mesh );
+					lastIntersects = intersects;
+
+					// Toggle rotation bool for meshes that we clicked
+					if ( intersects.length > 0 ) {
+
+						helper.position.set( 0, 0, 0 );
+						helper.lookAt( intersects[ 0 ].face.normal );
+
+						helper.position.copy( intersects[ 0 ].point );
+
+					}
 				}
-
 			}
 
 		</script>

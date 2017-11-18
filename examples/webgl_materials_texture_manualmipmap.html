@@ -37,7 +37,7 @@
 
 	<body>
 		<div id="info">
-			<a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - texture manual mipmapping example
+			<a href="http://threejs.org" target="_blank">three.js</a> - texture manual mipmapping example
 			- painting by <a href="http://en.wikipedia.org/wiki/Basket_of_Fruit_%28Caravaggio%29">Caravaggio</a>
 		</div>
 
@@ -61,7 +61,7 @@
 		min: <span class="c">Nearest</span>
 		</div>
 
-		<script src="../build/three.js"></script>
+		<script src="../build/three.min.js"></script>
 
 		<script src="js/Detector.js"></script>
 		<script src="js/libs/stats.min.js"></script>
@@ -95,12 +95,10 @@
 				camera.position.z = 1500;
 
 				scene1 = new THREE.Scene();
-				scene1.background = new THREE.Color( 0x000000 );
 				scene1.fog = new THREE.Fog( 0x000000, 1500, 4000 );
 
 				scene2 = new THREE.Scene();
-				scene2.background = new THREE.Color( 0x000000 );
-				scene2.fog = new THREE.Fog( 0x000000, 1500, 4000 );
+				scene2.fog = scene1.fog;
 
 				// GROUND
 
@@ -122,7 +120,8 @@
 				}
 
 				var canvas = mipmap( 128, '#f00' );
-				var textureCanvas1 = new THREE.CanvasTexture( canvas );
+				var textureCanvas1 = new THREE.Texture( canvas, THREE.UVMapping, THREE.RepeatWrapping, THREE.RepeatWrapping );
+				textureCanvas1.repeat.set( 1000, 1000 );
 				textureCanvas1.mipmaps[ 0 ] = canvas;
 				textureCanvas1.mipmaps[ 1 ] = mipmap( 64, '#0f0' );
 				textureCanvas1.mipmaps[ 2 ] = mipmap( 32, '#00f' );
@@ -131,18 +130,17 @@
 				textureCanvas1.mipmaps[ 5 ] = mipmap( 4,  '#004' );
 				textureCanvas1.mipmaps[ 6 ] = mipmap( 2,  '#044' );
 				textureCanvas1.mipmaps[ 7 ] = mipmap( 1,  '#404' );
-				textureCanvas1.repeat.set( 1000, 1000 );
-				textureCanvas1.wrapS = THREE.RepeatWrapping;
-				textureCanvas1.wrapT = THREE.RepeatWrapping;
+				textureCanvas1.needsUpdate = true;
+
+				materialCanvas1 = new THREE.MeshBasicMaterial( { map: textureCanvas1 } );
 
 				var textureCanvas2 = textureCanvas1.clone();
 				textureCanvas2.magFilter = THREE.NearestFilter;
 				textureCanvas2.minFilter = THREE.NearestMipMapNearestFilter;
+				textureCanvas2.needsUpdate = true;
+				materialCanvas2 = new THREE.MeshBasicMaterial( { color: 0xffccaa, map: textureCanvas2 } );
 
-				var materialCanvas1 = new THREE.MeshBasicMaterial( { map: textureCanvas1 } );
-				var materialCanvas2 = new THREE.MeshBasicMaterial( { color: 0xffccaa, map: textureCanvas2 } );
-
-				var geometry = new THREE.PlaneBufferGeometry( 100, 100 );
+				var geometry = new THREE.PlaneGeometry( 100, 100 );
 
 				var meshCanvas1 = new THREE.Mesh( geometry, materialCanvas1 );
 				meshCanvas1.rotation.x = -Math.PI / 2;
@@ -165,7 +163,7 @@
 					scene1.add( meshCanvas1 );
 					scene2.add( meshCanvas2 );
 
-					var geometry = new THREE.PlaneBufferGeometry( 100, 100 );
+					var geometry = new THREE.PlaneGeometry( 100, 100 );
 					var mesh1 = new THREE.Mesh( geometry, materialPainting1 );
 					var mesh2 = new THREE.Mesh( geometry, materialPainting2 );
 
@@ -179,10 +177,10 @@
 
 						zscene.add( zmesh );
 
-						var meshFrame = new THREE.Mesh( geometry, new THREE.MeshBasicMaterial( { color: 0x000000 } ) );
-						meshFrame.position.z = - 10.0;
+						var meshFrame = new THREE.Mesh( geometry, new THREE.MeshBasicMaterial( { color: 0x000000, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 5 } ) );
 						meshFrame.scale.x = 1.1 * image.width / 100;
 						meshFrame.scale.y = 1.1 * image.height / 100;
+
 						zscene.add( meshFrame );
 
 						var meshShadow = new THREE.Mesh( geometry, new THREE.MeshBasicMaterial( { color: 0x000000, opacity: 0.75, transparent: true } ) );
@@ -201,25 +199,28 @@
 
 				};
 
-				var texturePainting1 = new THREE.TextureLoader().load( "textures/758px-Canestra_di_frutta_(Caravaggio).jpg", callbackPainting );
-				var texturePainting2 = new THREE.Texture();
-				var materialPainting1 = new THREE.MeshBasicMaterial( { color: 0xffffff, map: texturePainting1 } );
-				var materialPainting2 = new THREE.MeshBasicMaterial( { color: 0xffccaa, map: texturePainting2 } );
+				var texturePainting1 = THREE.ImageUtils.loadTexture( "textures/758px-Canestra_di_frutta_(Caravaggio).jpg", THREE.UVMapping, callbackPainting ),
+					texturePainting2 = new THREE.Texture(),
+					materialPainting1 = new THREE.MeshBasicMaterial( { color: 0xffffff, map: texturePainting1 } ),
+					materialPainting2 = new THREE.MeshBasicMaterial( { color: 0xffccaa, map: texturePainting2 } );
 
 				texturePainting2.minFilter = texturePainting2.magFilter = THREE.NearestFilter;
 				texturePainting1.minFilter = texturePainting1.magFilter = THREE.LinearFilter;
-				texturePainting1.mapping = THREE.UVMapping;
+
 
 				renderer = new THREE.WebGLRenderer( { antialias: true } );
-				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( SCREEN_WIDTH, SCREEN_HEIGHT );
+				renderer.setClearColor( scene1.fog.color, 1 );
 				renderer.autoClear = false;
 
 				renderer.domElement.style.position = "relative";
 				container.appendChild( renderer.domElement );
 
 				stats = new Stats();
-				//container.appendChild( stats.dom );
+				stats.domElement.style.position = 'absolute';
+				stats.domElement.style.top = '0px';
+				stats.domElement.style.zIndex = 100;
+				//container.appendChild( stats.domElement );
 
 				document.addEventListener( 'mousemove', onDocumentMouseMove, false );
 
@@ -238,9 +239,8 @@
 
 				requestAnimationFrame( animate );
 
-				stats.begin();
 				render();
-				stats.end();
+				stats.update();
 
 			}
 
@@ -251,16 +251,15 @@
 
 				camera.lookAt( scene1.position );
 
+				renderer.enableScissorTest( false );
 				renderer.clear();
-				renderer.setScissorTest( true );
+				renderer.enableScissorTest( true );
 
 				renderer.setScissor( 0, 0, SCREEN_WIDTH / 2 - 2, SCREEN_HEIGHT );
 				renderer.render( scene1, camera );
 
 				renderer.setScissor( SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2 - 2, SCREEN_HEIGHT );
 				renderer.render( scene2, camera );
-
-				renderer.setScissorTest( false );
 
 			}
 

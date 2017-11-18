@@ -15,10 +15,7 @@
 	</head>
 	<body>
 
-		<script src="../build/three.js"></script>
-
-		<script src="js/renderers/Projector.js"></script>
-		<script src="js/renderers/CanvasRenderer.js"></script>
+		<script src="../build/three.min.js"></script>
 
 		<script src="js/libs/stats.min.js"></script>
 
@@ -26,7 +23,7 @@
 
 			var container, stats;
 			var camera, scene, projector, renderer;
-			var mesh, mixer;
+			var mesh, animation;
 
 			init();
 			animate();
@@ -41,7 +38,7 @@
 				info.style.top = '10px';
 				info.style.width = '100%';
 				info.style.textAlign = 'center';
-				info.innerHTML = '<a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> canvas - morph targets - horse. model by <a href="http://mirada.com/">mirada</a> from <a href="http://ro.me">rome</a>';
+				info.innerHTML = '<a href="http://threejs.org" target="_blank">three.js</a> canvas - morph targets - horse. model by <a href="http://mirada.com/">mirada</a> from <a href="http://ro.me">rome</a>';
 				container.appendChild( info );
 
 				//
@@ -51,49 +48,42 @@
 				camera.target = new THREE.Vector3( 0, 150, 0 );
 
 				scene = new THREE.Scene();
-				scene.background = new THREE.Color( 0xf0f0f0 );
 
 				//
 
-				var light = new THREE.DirectionalLight( 0xefefff, 1.5 );
+				var light = new THREE.DirectionalLight( 0xefefff, 2 );
 				light.position.set( 1, 1, 1 ).normalize();
 				scene.add( light );
 
-				var light = new THREE.DirectionalLight( 0xffefef, 1.5 );
+				var light = new THREE.DirectionalLight( 0xffefef, 2 );
 				light.position.set( -1, -1, -1 ).normalize();
 				scene.add( light );
 
-				var loader = new THREE.JSONLoader();
+				var loader = new THREE.JSONLoader( true );
 				loader.load( "models/animated/horse.js", function ( geometry ) {
 
-					var material = new THREE.MeshLambertMaterial( {
-						vertexColors: THREE.FaceColors,
-						morphTargets: true,
-						overdraw: 0.5
-					} );
-
-					mesh = new THREE.Mesh( geometry, material );
+					mesh = new THREE.Mesh( geometry, new THREE.MeshLambertMaterial( { color: 0x606060, morphTargets: true, overdraw: 0.5 } ) );
 					mesh.scale.set( 1.5, 1.5, 1.5 );
 					scene.add( mesh );
 
-					mixer = new THREE.AnimationMixer( mesh );
-
-					var clip = THREE.AnimationClip.CreateFromMorphTargetSequence( 'gallop', geometry.morphTargets, 30 );
-					mixer.clipAction( clip ).setDuration( 1 ).play();
+					animation = new THREE.MorphAnimation( mesh );
+					animation.play();
 
 				} );
 
 				//
 
 				renderer = new THREE.CanvasRenderer();
-				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setClearColor( 0xf0f0f0 );
 				renderer.setSize( window.innerWidth, window.innerHeight );
 				container.appendChild(renderer.domElement);
 
 				//
 
 				stats = new Stats();
-				container.appendChild( stats.dom );
+				stats.domElement.style.position = 'absolute';
+				stats.domElement.style.top = '0px';
+				container.appendChild( stats.domElement );
 
 				//
 
@@ -135,11 +125,11 @@
 
 				camera.lookAt( camera.target );
 
-				if ( mixer ) {
+				if ( animation ) {
 
 					var time = Date.now();
 
-					mixer.update( ( time - prevTime ) * 0.001 );
+					animation.update( time - prevTime );
 
 					prevTime = time;
 

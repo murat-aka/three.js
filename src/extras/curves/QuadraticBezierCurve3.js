@@ -1,52 +1,27 @@
-import { Curve } from '../core/Curve.js';
-import { QuadraticBezier } from '../core/Interpolations.js';
-import { Vector3 } from '../../math/Vector3.js';
+/**************************************************************
+ *	Quadratic Bezier 3D curve
+ **************************************************************/
 
+THREE.QuadraticBezierCurve3 = THREE.Curve.create(
 
-function QuadraticBezierCurve3( v0, v1, v2 ) {
+	function ( v0, v1, v2 ) {
 
-	Curve.call( this );
+		this.v0 = v0;
+		this.v1 = v1;
+		this.v2 = v2;
 
-	this.type = 'QuadraticBezierCurve3';
+	},
 
-	this.v0 = v0 || new Vector3();
-	this.v1 = v1 || new Vector3();
-	this.v2 = v2 || new Vector3();
+	function ( t ) {
 
-}
+		var tx, ty, tz;
 
-QuadraticBezierCurve3.prototype = Object.create( Curve.prototype );
-QuadraticBezierCurve3.prototype.constructor = QuadraticBezierCurve3;
+		tx = THREE.Shape.Utils.b2( t, this.v0.x, this.v1.x, this.v2.x );
+		ty = THREE.Shape.Utils.b2( t, this.v0.y, this.v1.y, this.v2.y );
+		tz = THREE.Shape.Utils.b2( t, this.v0.z, this.v1.z, this.v2.z );
 
-QuadraticBezierCurve3.prototype.isQuadraticBezierCurve3 = true;
+		return new THREE.Vector3( tx, ty, tz );
 
-QuadraticBezierCurve3.prototype.getPoint = function ( t, optionalTarget ) {
+	}
 
-	var point = optionalTarget || new Vector3();
-
-	var v0 = this.v0, v1 = this.v1, v2 = this.v2;
-
-	point.set(
-		QuadraticBezier( t, v0.x, v1.x, v2.x ),
-		QuadraticBezier( t, v0.y, v1.y, v2.y ),
-		QuadraticBezier( t, v0.z, v1.z, v2.z )
-	);
-
-	return point;
-
-};
-
-QuadraticBezierCurve3.prototype.copy = function ( source ) {
-
-	Curve.prototype.copy.call( this, source );
-
-	this.v0.copy( source.v0 );
-	this.v1.copy( source.v1 );
-	this.v2.copy( source.v2 );
-
-	return this;
-
-};
-
-
-export { QuadraticBezierCurve3 };
+);

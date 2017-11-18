@@ -1,6 +1,3 @@
-import { Material } from './Material.js';
-import { Color } from '../math/Color.js';
-
 /**
  * @author alteredq / http://alteredqualia.com/
  *
@@ -9,45 +6,51 @@ import { Color } from '../math/Color.js';
  *  opacity: <float>,
  *  map: new THREE.Texture( <Image> ),
  *
+ *  blending: THREE.NormalBlending,
+ *  depthTest: <bool>,
+ *  depthWrite: <bool>,
+ *
  *	uvOffset: new THREE.Vector2(),
- *	uvScale: new THREE.Vector2()
+ *	uvScale: new THREE.Vector2(),
+ *
+ *  fog: <bool>
  * }
  */
 
-function SpriteMaterial( parameters ) {
+THREE.SpriteMaterial = function ( parameters ) {
 
-	Material.call( this );
+	THREE.Material.call( this );
 
-	this.type = 'SpriteMaterial';
+	// defaults
 
-	this.color = new Color( 0xffffff );
+	this.color = new THREE.Color( 0xffffff );
 	this.map = null;
 
 	this.rotation = 0;
 
 	this.fog = false;
-	this.lights = false;
+
+	// set parameters
 
 	this.setValues( parameters );
 
-}
-
-SpriteMaterial.prototype = Object.create( Material.prototype );
-SpriteMaterial.prototype.constructor = SpriteMaterial;
-SpriteMaterial.prototype.isSpriteMaterial = true;
-
-SpriteMaterial.prototype.copy = function ( source ) {
-
-	Material.prototype.copy.call( this, source );
-
-	this.color.copy( source.color );
-	this.map = source.map;
-
-	this.rotation = source.rotation;
-
-	return this;
-
 };
 
+THREE.SpriteMaterial.prototype = Object.create( THREE.Material.prototype );
 
-export { SpriteMaterial };
+THREE.SpriteMaterial.prototype.clone = function () {
+
+	var material = new THREE.SpriteMaterial();
+
+	THREE.Material.prototype.clone.call( this, material );
+
+	material.color.copy( this.color );
+	material.map = this.map;
+
+	material.rotation = this.rotation;
+
+	material.fog = this.fog;
+
+	return material;
+
+};

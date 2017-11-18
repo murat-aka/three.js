@@ -28,10 +28,10 @@
 	</head>
 
 	<body>
-		<div id="info"><a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - custom attributes example</div>
+		<div id="info"><a href="http://threejs.org" target="_blank">three.js</a> - custom attributes example</div>
 		<div id="container"></div>
 
-		<script src="../build/three.js"></script>
+		<script src="../build/three.min.js"></script>
 
 		<script src="js/Detector.js"></script>
 		<script src="js/libs/stats.min.js"></script>
@@ -88,26 +88,34 @@
 
 		var renderer, scene, camera, stats;
 
-		var sphere, uniforms;
+		var sphere, uniforms, attributes;
 
-		var displacement, noise;
+		var noise = [];
+
+		var WIDTH = window.innerWidth,
+			HEIGHT = window.innerHeight;
 
 		init();
 		animate();
 
 		function init() {
 
-			camera = new THREE.PerspectiveCamera( 30, window.innerWidth / window.innerHeight, 1, 10000 );
+			camera = new THREE.PerspectiveCamera( 30, WIDTH / HEIGHT, 1, 10000 );
 			camera.position.z = 300;
 
 			scene = new THREE.Scene();
-			scene.background = new THREE.Color( 0x050505 );
+
+			attributes = {
+
+				displacement: {	type: 'f', value: [] }
+
+			};
 
 			uniforms = {
 
-				amplitude: { value: 1.0 },
-				color:     { value: new THREE.Color( 0xff2200 ) },
-				texture:   { value: new THREE.TextureLoader().load( "textures/water.jpg" ) }
+				amplitude: { type: "f", value: 1.0 },
+				color:     { type: "c", value: new THREE.Color( 0xff2200 ) },
+				texture:   { type: "t", value: THREE.ImageUtils.loadTexture( "textures/water.jpg" ) },
 
 			};
 
@@ -115,40 +123,43 @@
 
 			var shaderMaterial = new THREE.ShaderMaterial( {
 
-				uniforms: uniforms,
-				vertexShader:document.getElementById( 'vertexshader' ).textContent,
+				uniforms: 		uniforms,
+				attributes:     attributes,
+				vertexShader:   document.getElementById( 'vertexshader' ).textContent,
 				fragmentShader: document.getElementById( 'fragmentshader' ).textContent
 
 			});
 
 
 			var radius = 50, segments = 128, rings = 64;
+			var geometry = new THREE.SphereGeometry( radius, segments, rings );
+			geometry.dynamic = true;
 
-			var geometry = new THREE.SphereBufferGeometry( radius, segments, rings );
+			sphere = new THREE.Mesh( geometry, shaderMaterial );
 
-			displacement = new Float32Array( geometry.attributes.position.count );
-			noise = new Float32Array( geometry.attributes.position.count );
+			var vertices = sphere.geometry.vertices;
+			var values = attributes.displacement.value;
 
-			for ( var i = 0; i < displacement.length; i ++ ) {
+			for ( var v = 0; v < vertices.length; v++ ) {
 
-				noise[ i ] = Math.random() * 5;
+				values[ v ] = 0;
+				noise[ v ] = Math.random() * 5;
 
 			}
 
-			geometry.addAttribute( 'displacement', new THREE.BufferAttribute( displacement, 1 ) );
-
-			sphere = new THREE.Mesh( geometry, shaderMaterial );
 			scene.add( sphere );
 
 			renderer = new THREE.WebGLRenderer();
-			renderer.setPixelRatio( window.devicePixelRatio );
-			renderer.setSize( window.innerWidth, window.innerHeight );
+			renderer.setClearColor( 0x050505, 1 );
+			renderer.setSize( WIDTH, HEIGHT );
 
 			var container = document.getElementById( 'container' );
 			container.appendChild( renderer.domElement );
 
 			stats = new Stats();
-			container.appendChild( stats.dom );
+			stats.domElement.style.position = 'absolute';
+			stats.domElement.style.top = '0px';
+			container.appendChild( stats.domElement );
 
 			//
 
@@ -183,18 +194,18 @@
 			uniforms.amplitude.value = 2.5 * Math.sin( sphere.rotation.y * 0.125 );
 			uniforms.color.value.offsetHSL( 0.0005, 0, 0 );
 
-			for ( var i = 0; i < displacement.length; i ++ ) {
+			for ( var i = 0; i < attributes.displacement.value.length; i ++ ) {
 
-				displacement[ i ] = Math.sin( 0.1 * i + time );
+				attributes.displacement.value[ i ] = Math.sin( 0.1 * i + time );
 
 				noise[ i ] += 0.5 * ( 0.5 - Math.random() );
 				noise[ i ] = THREE.Math.clamp( noise[ i ], -5, 5 );
 
-				displacement[ i ] += noise[ i ];
+				attributes.displacement.value[ i ] += noise[ i ];
 
 			}
 
-			sphere.geometry.attributes.displacement.needsUpdate = true;
+			attributes.displacement.needsUpdate = true;
 
 			renderer.render( scene, camera );
 

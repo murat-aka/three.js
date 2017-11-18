@@ -1,18 +1,17 @@
-import { Vector3 } from './Vector3.js';
-import { _Math } from './Math.js';
-
 /**
- * @author bhouston / http://clara.io
+ * @author bhouston / http://exocortex.com
  */
 
-function Line3( start, end ) {
+THREE.Line3 = function ( start, end ) {
 
-	this.start = ( start !== undefined ) ? start : new Vector3();
-	this.end = ( end !== undefined ) ? end : new Vector3();
+	this.start = ( start !== undefined ) ? start : new THREE.Vector3();
+	this.end = ( end !== undefined ) ? end : new THREE.Vector3();
 
-}
+};
 
-Object.assign( Line3.prototype, {
+THREE.Line3.prototype = {
+
+	constructor: THREE.Line3,
 
 	set: function ( start, end ) {
 
@@ -20,12 +19,6 @@ Object.assign( Line3.prototype, {
 		this.end.copy( end );
 
 		return this;
-
-	},
-
-	clone: function () {
-
-		return new this.constructor().copy( this );
 
 	},
 
@@ -38,16 +31,16 @@ Object.assign( Line3.prototype, {
 
 	},
 
-	getCenter: function ( optionalTarget ) {
+	center: function ( optionalTarget ) {
 
-		var result = optionalTarget || new Vector3();
+		var result = optionalTarget || new THREE.Vector3();
 		return result.addVectors( this.start, this.end ).multiplyScalar( 0.5 );
 
 	},
 
 	delta: function ( optionalTarget ) {
 
-		var result = optionalTarget || new Vector3();
+		var result = optionalTarget || new THREE.Vector3();
 		return result.subVectors( this.end, this.start );
 
 	},
@@ -66,18 +59,18 @@ Object.assign( Line3.prototype, {
 
 	at: function ( t, optionalTarget ) {
 
-		var result = optionalTarget || new Vector3();
+		var result = optionalTarget || new THREE.Vector3();
 
 		return this.delta( result ).multiplyScalar( t ).add( this.start );
 
 	},
 
-	closestPointToPointParameter: function () {
+	closestPointToPointParameter: function() {
 
-		var startP = new Vector3();
-		var startEnd = new Vector3();
+		var startP = new THREE.Vector3();
+		var startEnd = new THREE.Vector3();
 
-		return function closestPointToPointParameter( point, clampToLine ) {
+		return function ( point, clampToLine ) {
 
 			startP.subVectors( point, this.start );
 			startEnd.subVectors( this.end, this.start );
@@ -89,7 +82,7 @@ Object.assign( Line3.prototype, {
 
 			if ( clampToLine ) {
 
-				t = _Math.clamp( t, 0, 1 );
+				t = THREE.Math.clamp( t, 0, 1 );
 
 			}
 
@@ -103,7 +96,7 @@ Object.assign( Line3.prototype, {
 
 		var t = this.closestPointToPointParameter( point, clampToLine );
 
-		var result = optionalTarget || new Vector3();
+		var result = optionalTarget || new THREE.Vector3();
 
 		return this.delta( result ).multiplyScalar( t ).add( this.start );
 
@@ -122,9 +115,12 @@ Object.assign( Line3.prototype, {
 
 		return line.start.equals( this.start ) && line.end.equals( this.end );
 
+	},
+
+	clone: function () {
+
+		return new THREE.Line3().copy( this );
+
 	}
 
-} );
-
-
-export { Line3 };
+};

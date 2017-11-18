@@ -4,69 +4,41 @@
  * @author WestLangley / http://github.com/WestLangley
 */
 
-import { Matrix4 } from '../math/Matrix4.js';
-import { Quaternion } from '../math/Quaternion.js';
-import { Object3D } from '../core/Object3D.js';
-import { Vector3 } from '../math/Vector3.js';
+THREE.Camera = function () {
 
-function Camera() {
+	THREE.Object3D.call( this );
 
-	Object3D.call( this );
+	this.matrixWorldInverse = new THREE.Matrix4();
+	this.projectionMatrix = new THREE.Matrix4();
 
-	this.type = 'Camera';
+};
 
-	this.matrixWorldInverse = new Matrix4();
-	this.projectionMatrix = new Matrix4();
+THREE.Camera.prototype = Object.create( THREE.Object3D.prototype );
 
-}
+THREE.Camera.prototype.lookAt = function () {
 
-Camera.prototype = Object.assign( Object.create( Object3D.prototype ), {
+	// This routine does not support cameras with rotated and/or translated parent(s)
 
-	constructor: Camera,
+	var m1 = new THREE.Matrix4();
 
-	isCamera: true,
+	return function ( vector ) {
 
-	copy: function ( source, recursive ) {
+		m1.lookAt( this.position, vector, this.up );
 
-		Object3D.prototype.copy.call( this, source, recursive );
+		this.quaternion.setFromRotationMatrix( m1 );
 
-		this.matrixWorldInverse.copy( source.matrixWorldInverse );
-		this.projectionMatrix.copy( source.projectionMatrix );
+	};
 
-		return this;
+}();
 
-	},
+THREE.Camera.prototype.clone = function (camera) {
 
-	getWorldDirection: function () {
+	if ( camera === undefined ) camera = new THREE.Camera();
 
-		var quaternion = new Quaternion();
+	THREE.Object3D.prototype.clone.call( this, camera );
 
-		return function getWorldDirection( optionalTarget ) {
+	camera.matrixWorldInverse.copy( this.matrixWorldInverse );
+	camera.projectionMatrix.copy( this.projectionMatrix );
 
-			var result = optionalTarget || new Vector3();
-
-			this.getWorldQuaternion( quaternion );
-
-			return result.set( 0, 0, - 1 ).applyQuaternion( quaternion );
-
-		};
-
-	}(),
-
-	updateMatrixWorld: function ( force ) {
-
-		Object3D.prototype.updateMatrixWorld.call( this, force );
-
-		this.matrixWorldInverse.getInverse( this.matrixWorld );
-
-	},
-
-	clone: function () {
-
-		return new this.constructor().copy( this );
-
-	}
-
-} );
-
-export { Camera };
+	return camera;
+};

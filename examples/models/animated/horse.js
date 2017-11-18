@@ -11,6 +11,7 @@
 	"DbgColor" : 15658734,
 	"DbgIndex" : 0,
 	"DbgName" : "comp_horse_rig:blinn9SG",
+	"colorAmbient" : [0.0, 0.0, 0.0],
 	"colorDiffuse" : [0.41999999999999998, 0.56999999999999995, 0.45000000000000001],
 	"colorSpecular" : [1.0, 0.42999999999999999, 0.35999999999999999],
 	"illumination" : 4,

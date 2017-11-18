@@ -1,205 +1,102 @@
-/**
- * @author mrdoob / http://mrdoob.com/
- */
-
 Menubar.Edit = function ( editor ) {
 
-	var container = new UI.Panel();
-	container.setClass( 'menu' );
+	// event handlers
 
-	var title = new UI.Panel();
-	title.setClass( 'title' );
-	title.setTextContent( 'Edit' );
-	container.add( title );
+	// function onUndoOptionClick () {
 
-	var options = new UI.Panel();
-	options.setClass( 'options' );
-	container.add( options );
+	// 	console.log( 'UNDO not implemented yet' );
 
-	// Undo
+	// }
 
-	var undo = new UI.Row();
-	undo.setClass( 'option' );
-	undo.setTextContent( 'Undo (Ctrl+Z)' );
-	undo.onClick( function () {
+	// function onRedoOptionClick () {
 
-		editor.undo();
+	// 	console.log( 'REDO not implemented yet' );
 
-	} );
-	options.add( undo );
+	// }
 
-	// Redo
-
-	var redo = new UI.Row();
-	redo.setClass( 'option' );
-	redo.setTextContent( 'Redo (Ctrl+Shift+Z)' );
-	redo.onClick( function () {
-
-		editor.redo();
-
-	} );
-	options.add( redo );
-
-	// Clear History
-
-	var option = new UI.Row();
-	option.setClass( 'option' );
-	option.setTextContent( 'Clear History' );
-	option.onClick( function () {
-
-		if ( confirm( 'The Undo/Redo History will be cleared. Are you sure?' ) ) {
-
-			editor.history.clear();
-
-		}
-
-	} );
-	options.add( option );
-
-
-	editor.signals.historyChanged.add( function () {
-
-		var history = editor.history;
-
-		undo.setClass( 'option' );
-		redo.setClass( 'option' );
-
-		if ( history.undos.length == 0 ) {
-
-			undo.setClass( 'inactive' );
-
-		}
-
-		if ( history.redos.length == 0 ) {
-
-			redo.setClass( 'inactive' );
-
-		}
-
-	} );
-
-	// ---
-
-	options.add( new UI.HorizontalRule() );
-
-	// Clone
-
-	var option = new UI.Row();
-	option.setClass( 'option' );
-	option.setTextContent( 'Clone' );
-	option.onClick( function () {
+	function onCloneOptionClick () {
 
 		var object = editor.selected;
 
-		if ( object.parent === null ) return; // avoid cloning the camera or scene
+		if ( object.parent === undefined ) return; // avoid cloning the camera or scene
 
 		object = object.clone();
 
-		editor.execute( new AddObjectCommand( object ) );
+		editor.addObject( object );
+		editor.select( object );
 
-	} );
-	options.add( option );
+	}
 
-	// Delete
+	function onDeleteOptionClick () {
 
-	var option = new UI.Row();
-	option.setClass( 'option' );
-	option.setTextContent( 'Delete (Del)' );
-	option.onClick( function () {
+		var parent = editor.selected.parent;
+		editor.removeObject( editor.selected );
+		editor.select( parent );
+
+	}
+
+	function onConvertOptionClick () {
+
+		// convert to BufferGeometry
+		
+		var object = editor.selected;
+		if ( object.geometry instanceof THREE.Geometry ) {
+
+			if ( object.parent === undefined ) return; // avoid flattening the camera or scene
+
+			if ( confirm( 'Convert ' + object.name + ' to BufferGeometry?' ) === false ) return;
+
+			delete object.__webglInit; // TODO: Remove hack (WebGLRenderer refactoring)
+
+			object.geometry = THREE.BufferGeometryUtils.fromGeometry( object.geometry );
+
+			editor.signals.objectChanged.dispatch( object );
+		}
+
+	}
+
+	function onFlattenOptionClick () {
 
 		var object = editor.selected;
 
-		if ( confirm( 'Delete ' + object.name + '?' ) === false ) return;
+		if ( object.parent === undefined ) return; // avoid flattening the camera or scene
 
-		var parent = object.parent;
-		if ( parent === undefined ) return; // avoid deleting the camera or scene
+		if ( confirm( 'Flatten ' + object.name + '?' ) === false ) return;
 
-		editor.execute( new RemoveObjectCommand( object ) );
+		delete object.__webglInit; // TODO: Remove hack (WebGLRenderer refactoring)
 
-	} );
-	options.add( option );
+		var geometry = object.geometry.clone();
+		geometry.applyMatrix( object.matrix );
 
-	// Minify shaders
+		object.geometry = geometry;
 
-	var option = new UI.Row();
-	option.setClass( 'option' );
-	option.setTextContent( 'Minify Shaders' );
-	option.onClick( function() {
+		object.position.set( 0, 0, 0 );
+		object.rotation.set( 0, 0, 0 );
+		object.scale.set( 1, 1, 1 );
 
-		var root = editor.selected || editor.scene;
+		editor.signals.objectChanged.dispatch( object );
 
-		var errors = [];
-		var nMaterialsChanged = 0;
+	}
 
-		var path = [];
+	// configure menu contents
 
-		function getPath ( object ) {
+	var createOption = UI.MenubarHelper.createOption;
+	var createDivider = UI.MenubarHelper.createDivider;
 
-			path.length = 0;
+	var menuConfig = [
+		// createOption( 'Undo', onUndoOptionClick ),
+		// createOption( 'Redo', onRedoOptionClick ),
+		// createDivider(),
 
-			var parent = object.parent;
-			if ( parent !== undefined ) getPath( parent );
+		createOption( 'Clone', onCloneOptionClick ),
+		createOption( 'Delete', onDeleteOptionClick ),
+		createDivider(),
 
-			path.push( object.name || object.uuid );
+		createOption( 'Convert', onConvertOptionClick ),
+		createOption( 'Flatten', onFlattenOptionClick )
+	];
 
-			return path;
+	var optionsPanel = UI.MenubarHelper.createOptionsPanel( menuConfig );
 
-		}
-
-		var cmds = [];
-		root.traverse( function ( object ) {
-
-			var material = object.material;
-
-			if ( material instanceof THREE.ShaderMaterial ) {
-
-				try {
-
-					var shader = glslprep.minifyGlsl( [
-							material.vertexShader, material.fragmentShader ] );
-
-					cmds.push( new SetMaterialValueCommand( object, 'vertexShader', shader[ 0 ] ) );
-					cmds.push( new SetMaterialValueCommand( object, 'fragmentShader', shader[ 1 ] ) );
-
-					++nMaterialsChanged;
-
-				} catch ( e ) {
-
-					var path = getPath( object ).join( "/" );
-
-					if ( e instanceof glslprep.SyntaxError )
-
-						errors.push( path + ":" +
-								e.line + ":" + e.column + ": " + e.message );
-
-					else {
-
-						errors.push( path +
-								": Unexpected error (see console for details)." );
-
-						console.error( e.stack || e );
-
-					}
-
-				}
-
-			}
-
-		} );
-
-		if ( nMaterialsChanged > 0 ) {
-
-			editor.execute( new MultiCmdsCommand( cmds ), 'Minify Shaders' );
-
-		}
-
-		window.alert( nMaterialsChanged +
-				" material(s) were changed.\n" + errors.join( "\n" ) );
-
-	} );
-	options.add( option );
-
-
-	return container;
-
-};
+	return UI.MenubarHelper.createMenuContainer( 'Edit', optionsPanel );
+}

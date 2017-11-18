@@ -26,11 +26,12 @@
 	"DbgColor" : 15597568,
 	"DbgIndex" : 1,
 	"DbgName" : "Material",
+	"colorAmbient" : [0.0, 0.0, 0.0],
 	"colorDiffuse" : [0.434594637671033, 0.434594637671033, 0.434594637671033],
 	"colorSpecular" : [0.10135135054588318, 0.10135135054588318, 0.10135135054588318],
 	"shading" : "Lambert",
 	"specularCoef" : 50,
-	"opacity" : 1.0,
+	"transparency" : 1.0,
 	"vertexColors" : false
 	},
 
@@ -38,11 +39,12 @@
 	"DbgColor" : 15597568,
 	"DbgIndex" : 1,
 	"DbgName" : "Material",
+	"colorAmbient" : [0.0, 0.0, 0.0],
 	"colorDiffuse" : [0.434594637671033, 0.434594637671033, 0.434594637671033],
 	"colorSpecular" : [0.10135135054588318, 0.10135135054588318, 0.10135135054588318],
 	"shading" : "Lambert",
 	"specularCoef" : 50,
-	"opacity" : 1.0,
+	"transparency" : 1.0,
 	"vertexColors" : false
 	}],
 
